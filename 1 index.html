@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bertazo | Gestão Estratégica</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💼</text></svg>">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        :root { --bordo: #800020; --gold: #b8860b; --bg: #f8f9fa; --card: #ffffff; --text: #2d3436; }
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg); color: var(--text); margin: 0; }
+        .hidden { display: none !important; }
+        #auth-screen { position: fixed; inset: 0; background: var(--bordo); display: flex; justify-content: center; align-items: center; z-index: 10000; }
+        .login-card { background: white; padding: 40px; border-radius: 20px; width: 350px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+        header { background: var(--bordo); color: white; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--gold); position: sticky; top: 0; z-index: 900; }
+        nav { background: white; display: flex; justify-content: center; border-bottom: 1px solid #ddd; position: sticky; top: 64px; z-index: 899; }
+        nav button { background: none; border: none; padding: 18px 25px; cursor: pointer; font-weight: 600; color: #636e72; font-size: 13px; text-transform: uppercase; transition: 0.3s; }
+        nav button.active { color: var(--bordo); border-bottom: 3px solid var(--bordo); background: #fff5f7; }
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 30px; }
+        .card { background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 4px solid var(--bordo); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        label { display: block; font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #dfe6e9; border-radius: 8px; font-size: 14px; }
+        .btn { background: var(--bordo); color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: 700; width: 100%; transition: 0.2s; }
+        .btn:hover { background: #5a0016; transform: translateY(-2px); }
+        .btn-alt { background: #636e72; margin-top: 5px; }
+        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .kpi-card { background: white; padding: 20px; border-radius: 12px; border-bottom: 4px solid var(--gold); text-align: center; }
+        .kpi-val { font-size: 24px; font-weight: 700; color: var(--bordo); margin-top: 5px; }
+        .filter-bar { background: #eee; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 10px; align-items: flex-end; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { text-align: left; padding: 12px; background: #f9f9f9; color: #888; font-size: 11px; text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid #eee; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        
+        /* Estilo da barra de exportação */
+        .export-actions { display: flex; gap: 10px; margin-bottom: 15px; justify-content: flex-end; }
+        .btn-export { width: auto; padding: 8px 15px; font-size: 12px; background: #2d3436; }
+        .btn-pdf { background: #d63031; }
+        .btn-excel { background: #27ae60; }
+    </style>
+</head>
+<body>
+
+<div id="auth-screen">
+    <div class="login-card">
+        <h1 style="color:var(--bordo); letter-spacing:3px;">BERTAZO</h1>
+        <p style="color:#666; margin-bottom:25px; font-size:12px;">GESTÃO ESTRATÉGICA</p>
+        <input type="email" id="email" placeholder="E-mail" style="margin-bottom:15px">
+        <input type="password" id="pass" placeholder="Senha" style="margin-bottom:20px">
+        <button class="btn" onclick="handleLogin()">ENTRAR</button>
+        <div id="login-err" style="color:red; font-size:12px; margin-top:10px"></div>
+    </div>
+</div>
+
+<div id="app" class="hidden">
+    <header>
+        <div style="font-weight: 700; letter-spacing: 2px;">BERTAZO</div>
+        <button onclick="logout()" style="background:none; border:1px solid white; color:white; border-radius:5px; cursor:pointer; padding:5px 12px; font-size:12px;">Sair</button>
+    </header>
+
+    <nav>
+        <button id="n-bi" class="active" onclick="tab('bi')">Dashboard BI</button>
+        <button id="n-cli" onclick="tab('cli')">Clientes</button>
+        <button id="n-fat" onclick="tab('fat')">Faturamento</button>
+        <button id="n-lic" onclick="tab('lic')">Licitações/Pedidos</button>
+    </nav>
+
+    <div class="container">
+        <section id="s-bi">
+            <div class="export-actions">
+                <button class="btn btn-export btn-pdf" onclick="exportBIPDF()">📄 Exportar Relatório PDF</button>
+            </div>
+            <div class="kpi-row">
+                <div class="kpi-card"><label>Faturamento Mês</label><div id="kpi-fat" class="kpi-val">R$ 0,00</div></div>
+                <div class="kpi-card">
+                    <label>Filtros de Visão</label>
+                    <div style="display:flex; gap:10px; margin-top:5px">
+                        <input type="month" id="f-mes" onchange="loadBI()">
+                        <select id="f-rep" onchange="loadBI()">
+                            <option value="">Todas Representadas</option>
+                            <option>PLAXMETAL PR</option><option>PLAXMETAL MS/MT</option><option>LUNASA</option><option>GEBB</option><option>ARIAM</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="card"><canvas id="mainChart" height="100"></canvas></div>
+        </section>
+
+        <section id="s-cli" class="hidden">
+            <div class="card">
+                <h3 id="cli-form-title">Novo Cliente</h3>
+                <input type="hidden" id="c-id">
+                <div class="grid">
+                    <div><label>Razão Social</label><input type="text" id="c-nome"></div>
+                    <div><label>CNPJ</label><input type="text" id="c-cnpj"></div>
+                    <div><label>Representada</label>
+                        <select id="c-rep">
+                            <option>PLAXMETAL PR</option><option>PLAXMETAL MS/MT</option><option>LUNASA</option><option>GEBB</option><option>ARIAM</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div><label>WhatsApp</label><input type="text" id="c-whats"></div>
+                    <div><label>Contato</label><input type="text" id="c-contato"></div>
+                    <div><label>Endereço</label><input type="text" id="c-end"></div>
+                </div>
+                <label>Observações</label><textarea id="c-obs" rows="2"></textarea>
+                <div style="display:flex; gap:10px; margin-top:15px">
+                    <button class="btn" id="btn-save-cli" onclick="saveCli()">Salvar Ficha</button>
+                    <button class="btn btn-alt hidden" id="btn-cancel-cli" onclick="resetCliForm()">Cancelar</button>
+                </div>
+            </div>
+            
+            <div class="export-actions">
+                <button class="btn btn-export btn-excel" onclick="exportTableToExcel('Clientes_Bertazo', filteredCli, ['nome','cnpj','representada','whatsapp','contato','endereco'])"> Excel</button>
+                <button class="btn btn-export btn-pdf" onclick="exportTableToPDF('Clientes', ['NOME','CNPJ','REP','ZAP'], filteredCli.map(c => [c.nome, c.cnpj, c.representada, c.whatsapp]))"> PDF</button>
+            </div>
+
+            <div class="filter-bar">
+                <div style="flex:1"><label>Buscar Cliente</label><input type="text" id="f-cli-search" placeholder="Nome ou CNPJ..." oninput="loadCli()"></div>
+            </div>
+            <div id="cli-list"></div>
+        </section>
+
+        <section id="s-fat" class="hidden">
+            <div class="card">
+                <h3>Registrar Venda / Faturamento</h3>
+                <div class="grid">
+                    <div><label>Data</label><input type="date" id="v-data"></div>
+                    <div><label>Cliente</label><input type="text" id="v-cli"></div>
+                    <div><label>Representada</label>
+                        <select id="v-rep">
+                            <option>PLAXMETAL PR</option><option>PLAXMETAL MS/MT</option><option>LUNASA</option><option>GEBB</option><option>ARIAM</option>
+                        </select>
+                    </div>
+                    <div><label>Valor R$</label><input type="number" id="v-val" step="0.01"></div>
+                    <div><label>NF</label><input type="text" id="v-nf"></div>
+                </div>
+                <button class="btn" onclick="saveVenda()">Lançar Venda</button>
+            </div>
+            <div class="card">
+                <div class="export-actions">
+                    <button class="btn btn-export btn-excel" onclick="exportTableToExcel('Faturamento_Bertazo', filteredVendas, ['data_venda','cliente_nome','valor','representada','nf'])"> Excel</button>
+                    <button class="btn btn-export btn-pdf" onclick="exportTableToPDF('Faturamento', ['DATA','CLIENTE','VALOR','NF'], filteredVendas.map(v => [v.data_venda, v.cliente_nome, v.valor, v.nf]))"> PDF</button>
+                </div>
+                <div class="filter-bar">
+                    <div style="flex:1"><label>Filtrar Vendas</label><input type="text" id="f-fat-search" placeholder="Cliente ou NF..." oninput="loadVendas()"></div>
+                </div>
+                <table id="t-vendas"><thead><tr><th>Data</th><th>Cliente</th><th>Valor</th><th>Rep.</th><th>NF</th><th>Ações</th></tr></thead><tbody></tbody></table>
+            </div>
+        </section>
+
+        <section id="s-lic" class="hidden">
+            <div class="card">
+                <h3>Controle Interno de Licitações</h3>
+                <div class="grid">
+                    <div><label>Objeto</label><input type="text" id="l-obj"></div>
+                    <div><label>Cliente</label><input type="text" id="l-cli"></div>
+                    <div><label>Valor Total</label><input type="number" id="l-val" step="0.01"></div>
+                    <div><label>Comissão %</label><input type="number" id="l-pct" value="5"></div>
+                    <div><label>Status</label>
+                        <select id="l-status">
+                            <option>Pendente</option><option>Vencida</option><option>Faturada</option><option>Perdida</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn" onclick="saveLic()">Lançar Pedido</button>
+            </div>
+            <div class="card">
+                <div class="export-actions">
+                    <button class="btn btn-export btn-excel" onclick="exportTableToExcel('Licitacoes_Bertazo', filteredLic, ['objeto','cliente','valor_total','status'])"> Excel</button>
+                    <button class="btn btn-export btn-pdf" onclick="exportTableToPDF('Licitacoes', ['OBJETO','CLIENTE','VALOR','STATUS'], filteredLic.map(l => [l.objeto, l.cliente, l.valor_total, l.status]))"> PDF</button>
+                </div>
+                <div class="filter-bar">
+                    <div style="flex:1"><label>Filtrar Licitação</label><input type="text" id="f-lic-search" placeholder="Objeto, Cliente ou Status..." oninput="loadLic()"></div>
+                </div>
+                <table id="t-lic"><thead><tr><th>Data</th><th>Objeto</th><th>Cliente</th><th>Valor</th><th>Comissão</th><th>Status</th><th>Ações</th></tr></thead><tbody></tbody></table>
+            </div>
+        </section>
+    </div>
+</div>
+
+<script>
+    const SB_URL = "https://abjqrorlzkmbtiqoooxb.supabase.co";
+    const SB_KEY = "sb_publishable_89VYMYncTckOQdDyiKXpuQ_AewcuCE4";
+    const sb = supabase.createClient(SB_URL, SB_KEY);
+    let chart;
+    let rawClientes = [], rawVendas = [], rawLic = [];
+    let filteredCli = [], filteredVendas = [], filteredLic = [];
+
+    async function handleLogin() {
+        const { error } = await sb.auth.signInWithPassword({ email: document.getElementById('email').value, password: document.getElementById('pass').value });
+        if(error) document.getElementById('login-err').innerText = "Erro ao entrar."; else checkSession();
+    }
+    async function checkSession() {
+        const { data: { session } } = await sb.auth.getSession();
+        if(session) { document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('app').classList.remove('hidden'); init(); }
+    }
+    window.onload = checkSession;
+    async function logout() { await sb.auth.signOut(); location.reload(); }
+
+    function init() {
+        document.getElementById('f-mes').value = new Date().toISOString().slice(0, 7);
+        document.getElementById('v-data').valueAsDate = new Date();
+        loadBI(); loadCli(); loadVendas(); loadLic();
+    }
+
+    function tab(t) {
+        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById('s-'+t).classList.remove('hidden');
+        document.getElementById('n-'+t).classList.add('active');
+    }
+
+    // --- CLIENTES ---
+    async function saveCli() {
+        const id = document.getElementById('c-id').value;
+        const payload = {
+            nome: document.getElementById('c-nome').value, cnpj: document.getElementById('c-cnpj').value, 
+            representada: document.getElementById('c-rep').value, whatsapp: document.getElementById('c-whats').value, 
+            contato: document.getElementById('c-contato').value, endereco: document.getElementById('c-end').value, 
+            observacoes: document.getElementById('c-obs').value
+        };
+
+        if(id) {
+            await sb.from('clientes').update(payload).eq('id', id);
+            alert("Cliente Atualizado!");
+        } else {
+            await sb.from('clientes').insert([payload]);
+            alert("Cliente Salvo!");
+        }
+        resetCliForm();
+        loadCli();
+    }
+
+    function editCli(id) {
+        const c = rawClientes.find(item => item.id == id);
+        if(!c) return;
+        document.getElementById('c-id').value = c.id;
+        document.getElementById('c-nome').value = c.nome;
+        document.getElementById('c-cnpj').value = c.cnpj;
+        document.getElementById('c-rep').value = c.representada;
+        document.getElementById('c-whats').value = c.whatsapp;
+        document.getElementById('c-contato').value = c.contato;
+        document.getElementById('c-end').value = c.endereco;
+        document.getElementById('c-obs').value = c.observacoes;
+        
+        document.getElementById('cli-form-title').innerText = "Editar Cliente";
+        document.getElementById('btn-save-cli').innerText = "Atualizar Ficha";
+        document.getElementById('btn-cancel-cli').classList.remove('hidden');
+        window.scrollTo(0,0);
+    }
+
+    function resetCliForm() {
+        document.getElementById('c-id').value = "";
+        document.querySelectorAll('#s-cli input, #s-cli textarea').forEach(i => i.value = "");
+        document.getElementById('cli-form-title').innerText = "Novo Cliente";
+        document.getElementById('btn-save-cli').innerText = "Salvar Ficha";
+        document.getElementById('btn-cancel-cli').classList.add('hidden');
+    }
+
+    async function loadCli() {
+        const { data } = await sb.from('clientes').select('*').order('nome');
+        rawClientes = data || [];
+        const term = document.getElementById('f-cli-search').value.toLowerCase();
+        
+        filteredCli = rawClientes.filter(c => 
+            c.nome.toLowerCase().includes(term) || c.cnpj.includes(term)
+        );
+
+        document.getElementById('cli-list').innerHTML = filteredCli.map(c => `
+            <div class="card" style="border-left:8px solid var(--gold); border-top:none;">
+                <div style="display:flex; justify-content:space-between">
+                    <strong>${c.nome}</strong>
+                    <div>
+                        <button onclick="editCli('${c.id}')" style="border:none; background:none; cursor:pointer; margin-right:10px">✏️</button>
+                        <button onclick="del('clientes','${c.id}', loadCli)" style="border:none; background:none; cursor:pointer">🗑️</button>
+                    </div>
+                </div>
+                <div style="font-size:12px; color:#666; margin-top:5px;">
+                    <span class="badge" style="background:#eee; color:var(--bordo)">${c.representada}</span> | 
+                    CNPJ: ${c.cnpj} | Contato: ${c.contato} | Zap: ${c.whatsapp}
+                </div>
+                <p style="font-size:12px; background:#f4f4f4; padding:8px; border-radius:5px; margin-top:10px;">${c.observacoes || 'Sem notas.'}</p>
+            </div>`).join('');
+    }
+
+    // --- VENDAS ---
+    async function saveVenda() {
+        const val = document.getElementById('v-val').value;
+        if(!val) return alert("Insira um valor!");
+        await sb.from('vendas').insert([{
+            data_venda: document.getElementById('v-data').value, cliente_nome: document.getElementById('v-cli').value,
+            valor: parseFloat(val), representada: document.getElementById('v-rep').value, nf: document.getElementById('v-nf').value
+        }]);
+        loadVendas(); loadBI(); alert("Venda Lançada!");
+    }
+
+    async function loadVendas() {
+        const { data } = await sb.from('vendas').select('*').order('data_venda', {ascending:false});
+        rawVendas = data || [];
+        const term = document.getElementById('f-fat-search').value.toLowerCase();
+        
+        filteredVendas = rawVendas.filter(v => 
+            v.cliente_nome.toLowerCase().includes(term) || v.nf.toLowerCase().includes(term)
+        );
+
+        const tbody = document.querySelector('#t-vendas tbody');
+        tbody.innerHTML = filteredVendas.map(v => `<tr><td>${v.data_venda.split('-').reverse().join('/')}</td><td>${v.cliente_nome}</td><td>R$ ${v.valor.toLocaleString('pt-BR')}</td><td>${v.representada}</td><td>${v.nf}</td><td><button onclick="del('vendas','${v.id}', loadVendas)" style="border:none; background:none; cursor:pointer">🗑️</button></td></tr>`).join('');
+    }
+
+    // --- LICITAÇÕES ---
+    async function saveLic() {
+        await sb.from('licitacoes').insert([{
+            objeto: document.getElementById('l-obj').value, cliente: document.getElementById('l-cli').value,
+            valor_total: parseFloat(document.getElementById('l-val').value), comissao_pct: parseFloat(document.getElementById('l-pct').value),
+            status: document.getElementById('l-status').value
+        }]);
+        loadLic(); alert("Licitação Salva!");
+    }
+
+    async function loadLic() {
+        const { data } = await sb.from('licitacoes').select('*').order('data_pedido', {ascending:false});
+        rawLic = data || [];
+        const term = document.getElementById('f-lic-search').value.toLowerCase();
+
+        filteredLic = rawLic.filter(l => 
+            l.objeto.toLowerCase().includes(term) || l.cliente.toLowerCase().includes(term) || l.status.toLowerCase().includes(term)
+        );
+
+        const tbody = document.querySelector('#t-lic tbody');
+        tbody.innerHTML = filteredLic.map(l => `<tr><td>${l.data_pedido.split('-').reverse().join('/')}</td><td>${l.objeto}</td><td>${l.cliente}</td><td>R$ ${l.valor_total.toLocaleString('pt-BR')}</td><td>R$ ${(l.valor_total*(l.comissao_pct/100)).toLocaleString('pt-BR')}</td><td><span class="badge" style="background:var(--gold); color:white">${l.status}</span></td><td><button onclick="del('licitacoes','${l.id}', loadLic)" style="border:none; background:none; cursor:pointer">🗑️</button></td></tr>`).join('');
+    }
+
+    // --- BI ---
+    async function loadBI() {
+        const mes = document.getElementById('f-mes').value;
+        const rep = document.getElementById('f-rep').value;
+        let { data } = await sb.from('vendas').select('*');
+        const filtrados = (data || []).filter(v => {
+            const vMes = v.data_venda.substring(0, 7);
+            return vMes === mes && (rep === "" || v.representada === rep);
+        });
+
+        const total = filtrados.reduce((a, b) => a + b.valor, 0);
+        document.getElementById('kpi-fat').innerText = total.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+
+        const dias = {};
+        filtrados.forEach(v => { const d = v.data_venda.split('-')[2]; dias[d] = (dias[d]||0) + v.valor; });
+        if(chart) chart.destroy();
+        chart = new Chart(document.getElementById('mainChart'), {
+            type:'line', data:{ labels: Object.keys(dias).sort(), datasets:[{label:'Vendas R$', data: Object.values(dias), borderColor:'#800020', tension:0.3, fill:true, backgroundColor:'rgba(128,0,32,0.05)'}]}
+        });
+    }
+
+    async function del(table, id, callback) { if(confirm("Excluir registro permanentemente?")) { await sb.from(table).delete().eq('id', id); callback(); if(table==='vendas') loadBI(); } }
+
+    // --- FUNÇÕES DE EXPORTAÇÃO ---
+    function exportTableToExcel(filename, data, columns) {
+        if(data.length === 0) return alert("Sem dados para exportar");
+        const worksheet = XLSX.utils.json_to_sheet(data, { header: columns });
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Dados");
+        XLSX.writeFile(workbook, `${filename}_${new Date().toLocaleDateString()}.xlsx`);
+    }
+
+    function exportTableToPDF(title, head, body) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.text(`Bertazo | Relatório de ${title}`, 14, 15);
+        doc.autoTable({
+            startY: 20,
+            head: [head],
+            body: body,
+            theme: 'striped',
+            headStyles: { fillColor: [128, 0, 32] }
+        });
+        doc.save(`Bertazo_${title}_${new Date().toLocaleDateString()}.pdf`);
+    }
+
+    function exportBIPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const canvas = document.getElementById('mainChart');
+        const imgData = canvas.toDataURL('image/png');
+        
+        doc.setFontSize(18);
+        doc.setTextColor(128, 0, 32);
+        doc.text("BERTAZO - RELATÓRIO ESTRATÉGICO", 14, 20);
+        
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Período: ${document.getElementById('f-mes').value}`, 14, 30);
+        doc.text(`Faturamento Total: ${document.getElementById('kpi-fat').innerText}`, 14, 38);
+        
+        doc.addImage(imgData, 'PNG', 14, 50, 180, 80);
+        doc.save(`Dashboard_Bertazo_${document.getElementById('f-mes').value}.pdf`);
+    }
+</script>
+</body>
+</html>
