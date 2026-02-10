@@ -156,9 +156,16 @@
             </div>
 
             <div class="filter-bar">
-                <div style="flex:1">
+                <div style="flex:2">
                     <label>Buscar na Carteira</label>
                     <input type="text" id="f-cli-search" placeholder="Digite Nome, CNPJ ou Cidade..." oninput="loadCli()" style="margin:0;">
+                </div>
+                <div style="flex:1">
+                    <label>Filtrar Representada</label>
+                    <select id="f-cli-rep" onchange="loadCli()" style="margin:0;">
+                        <option value="">Todas</option>
+                        <option>PLAXMETAL PR</option><option>PLAXMETAL MS/MT</option><option>LUNASA</option><option>GEBB</option><option>ARIAM</option><option>ADVENTISTA</option>
+                    </select>
                 </div>
             </div>
             <div id="cli-list"></div>
@@ -313,7 +320,6 @@
         
         document.getElementById('cli-form-title').innerText = "Editando: " + c.nome;
         document.getElementById('btn-save-cli').innerText = "ATUALIZAR REGISTRO";
-        document.getElementById('btn-save-cli').classList.add('btn-gold'); // Visual diferente
         document.getElementById('btn-cancel-cli').classList.remove('hidden');
         window.scrollTo({top:0, behavior:'smooth'});
     }
@@ -323,7 +329,6 @@
         document.querySelectorAll('#s-cli input, #s-cli textarea').forEach(i => i.value = "");
         document.getElementById('cli-form-title').innerText = "Novo Cliente";
         document.getElementById('btn-save-cli').innerText = "SALVAR FICHA";
-        document.getElementById('btn-save-cli').classList.remove('btn-gold');
         document.getElementById('btn-cancel-cli').classList.add('hidden');
     }
 
@@ -331,12 +336,15 @@
         const { data } = await sb.from('clientes').select('*').order('nome');
         rawClientes = data || [];
         const term = document.getElementById('f-cli-search').value.toLowerCase();
+        const repFilter = document.getElementById('f-cli-rep').value;
         
-        filteredCli = rawClientes.filter(c => 
-            (c.nome && c.nome.toLowerCase().includes(term)) || 
-            (c.endereco && c.endereco.toLowerCase().includes(term)) ||
-            (c.cnpj && c.cnpj.includes(term))
-        );
+        filteredCli = rawClientes.filter(c => {
+            const matchesSearch = (c.nome && c.nome.toLowerCase().includes(term)) || 
+                                 (c.endereco && c.endereco.toLowerCase().includes(term)) ||
+                                 (c.cnpj && c.cnpj.includes(term));
+            const matchesRep = repFilter === "" || c.representada === repFilter;
+            return matchesSearch && matchesRep;
+        });
 
         document.getElementById('cli-list').innerHTML = filteredCli.map(c => `
             <div class="card" style="border-left:5px solid var(--gold); border-top:none; padding:15px; margin-bottom:10px;">
