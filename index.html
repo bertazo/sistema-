@@ -155,34 +155,24 @@
                 <button class="btn-export btn-excel" onclick="exportExcel('Clientes', filteredCli)">📊 Excel</button>
             </div>
 
-            <div class="filter-bar">
-                <div style="flex:1">
-                    <label>Buscar na Carteira</label>
-                    <input type="text" id="f-cli-search" placeholder="Digite Nome, CNPJ ou Cidade..." oninput="loadCli()" style="margin:0;">
-                </div>
-            </div>
-            <div id="cli-list"></div>
-        </section>
-
-        <section id="s-fat" class="hidden">
-            <div class="card">
-                <h3 style="margin-top:0; color:var(--bordo);">Registrar Venda</h3>
-                <div class="grid">
-                    <div><label>Data da Venda</label><input type="date" id="v-data"></div>
-                    <div><label>Cliente</label><input type="text" id="v-cli"></div>
-                    <div><label>Valor Total (R$)</label><input type="number" id="v-val" step="0.01"></div>
-                </div>
-                <div class="grid">
-                    <div><label>Representada</label>
-                        <select id="v-rep">
-                            <option>PLAXMETAL PR</option><option>PLAXMETAL MS/MT</option><option>LUNASA</option><option>GEBB</option><option>ARIAM</option><option>ADVENTISTA</option>
-                        </select>
-                    </div>
-                    <div><label>Número da NF</label><input type="text" id="v-nf"></div>
-                </div>
-                <button class="btn" onclick="saveVenda()">Confirmar Venda</button>
-            </div>
-
+           <div class="filter-bar">
+    <div style="flex:2">
+        <label>Buscar na Carteira</label>
+        <input type="text" id="f-cli-search" placeholder="Digite Nome, CNPJ ou Cidade..." oninput="loadCli()" style="margin:0;">
+    </div>
+    <div style="flex:1">
+        <label>Filtrar por Representada</label>
+        <select id="f-cli-rep" onchange="loadCli()" style="margin:0;">
+            <option value="">Todas</option>
+            <option>PLAXMETAL PR</option>
+            <option>PLAXMETAL MS/MT</option>
+            <option>LUNASA</option>
+            <option>GEBB</option>
+            <option>ARIAM</option>
+            <option>ADVENTISTA</option>
+        </select>
+    </div>
+</div>
             <div class="card">
                 <div class="export-actions">
                     <button class="btn-export btn-excel" onclick="exportExcel('Faturamento', filteredVendas)">📊 Excel</button>
@@ -546,5 +536,6 @@
 </script>
 </body>
 </html>
+
 
 
