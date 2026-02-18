@@ -333,46 +333,78 @@
         });
     }
 
-    async function saveCli() {
-        const id = document.getElementById('c-id').value;
-        const p = {
-            nome: document.getElementById('c-nome').value, cnpj: document.getElementById('c-cnpj').value,
-            representada: document.getElementById('c-rep').value, whatsapp: document.getElementById('c-whats').value,
-            contato: document.getElementById('c-contato').value, endereco: document.getElementById('c-end').value,
-            observacoes: document.getElementById('c-obs').value
-        };
-        if(id) await sb.from('clientes').update(p).eq('id', id);
-        else await sb.from('clientes').insert([p]);
-        document.getElementById('c-id').value = "";
-        document.querySelectorAll('#s-cli input, #s-cli textarea').forEach(i => i.value="");
-        loadCli();
+   async function saveCli() {
+    const id = document.getElementById('c-id').value;
+    const cnpj = document.getElementById('c-cnpj').value.trim();
+    const nome = document.getElementById('c-nome').value.trim();
+
+    // Trava de segurança: impede salvar sem nome ou CNPJ
+    if (!nome || !cnpj) {
+        alert("Para manter o registro completo, os campos Razão Social e CNPJ são obrigatórios.");
+        return;
     }
 
-    async function loadCli() {
-        const { data } = await sb.from('clientes').select('*').order('nome');
-        rawClientes = data || [];
-        const term = document.getElementById('f-cli-search').value.toLowerCase();
-        const rep = document.getElementById('f-cli-rep').value;
-        const filtered = rawClientes.filter(c => (c.nome.toLowerCase().includes(term) || (c.cnpj && c.cnpj.includes(term))) && (rep==="" || c.representada===rep));
+    const p = {
+        nome: nome, 
+        cnpj: cnpj,
+        representada: document.getElementById('c-rep').value, 
+        whatsapp: document.getElementById('c-whats').value,
+        contato: document.getElementById('c-contato').value, 
+        endereco: document.getElementById('c-end').value,
+        observacoes: document.getElementById('c-obs').value
+    };
 
-        document.getElementById('cli-list').innerHTML = filtered.map(c => `
-            <div class="client-item" style="border-left: 4px solid ${brandColors[c.representada]}">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <strong style="font-size:13px;">${c.nome}</strong>
-                        <span class="badge" style="background:${brandColors[c.representada]}22; color:${brandColors[c.representada]}; margin-left:8px;">${c.representada}</span>
-                    </div>
-                    <div>
-                        <button onclick="editCli('${c.id}')" style="border:none; background:none; cursor:pointer; font-size:12px;">✏️</button>
-                    </div>
-                </div>
-                <div style="font-size:11px; color:#7f8c8d; margin-top:5px; display:flex; gap:15px;">
-                    <span>CNPJ: ${c.cnpj || '-'}</span> <span>📍 ${c.endereco || '-'}</span> <span>📞 ${c.whatsapp || '-'}</span>
-                </div>
-                ${c.observacoes ? `<div class="obs-box">${c.observacoes}</div>` : ''}
-            </div>`).join('');
+    // Lógica de Unificação por CNPJ
+    if (!id) {
+        const { data: existing } = await sb
+            .from('clientes')
+            .select('id')
+            .eq('cnpj', cnpj)
+            .maybeSingle();
+
+        if (existing) {
+            if(confirm("CNPJ já cadastrado. Deseja atualizar a ficha existente deste cliente?")) {
+                await sb.from('clientes').update(p).eq('id', existing.id);
+            } else { return; }
+        } else {
+            await sb.from('clientes').insert([p]);
+        }
+    } else {
+        await sb.from('clientes').update(p).eq('id', id);
     }
 
+    // Limpeza dos campos
+    document.getElementById('c-id').value = "";
+    document.querySelectorAll('#s-cli input, #s-cli textarea').forEach(i => i.value="");
+    loadCli();
+}
+
+   async function loadCli() {
+    const { data } = await sb.from('clientes').select('*').order('nome');
+    rawClientes = data || [];
+    const term = document.getElementById('f-cli-search').value.toLowerCase();
+    const rep = document.getElementById('f-cli-rep').value;
+    const filtered = rawClientes.filter(c => (c.nome.toLowerCase().includes(term) || (c.cnpj && c.cnpj.includes(term))) && (rep==="" || c.representada===rep));
+
+    document.getElementById('cli-list').innerHTML = filtered.map(c => `
+        <div class="client-item" style="border-left: 4px solid ${brandColors[c.representada]}">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <strong style="font-size:13px;">${c.nome}</strong>
+                    <span class="badge" style="background:${brandColors[c.representada]}22; color:${brandColors[c.representada]}; margin-left:8px;">${c.representada}</span>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="editCli('${c.id}')" style="border:none; background:none; cursor:pointer; font-size:12px;" title="Editar">✏️</button>
+                    <button onclick="del('clientes', '${c.id}', loadCli)" style="border:none; background:none; cursor:pointer; font-size:12px; filter: grayscale(1);" title="Excluir Ficha">🗑️</button>
+                </div>
+            </div>
+            <div style="font-size:11px; color:#7f8c8d; margin-top:5px; display:flex; gap:15px;">
+                <span>CNPJ: ${c.cnpj || '-'}</span> <span>📍 ${c.endereco || '-'}</span> <span>📞 ${c.whatsapp || '-'}</span>
+            </div>
+            ${c.observacoes ? `<div class="obs-box">${c.observacoes}</div>` : ''}
+        </div>`).join('');
+}
+    
     function editCli(id) {
         const c = rawClientes.find(x => x.id == id);
         document.getElementById('c-id').value = c.id;
@@ -447,3 +479,4 @@
 </script>
 </body>
 </html>
+
