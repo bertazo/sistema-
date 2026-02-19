@@ -332,40 +332,62 @@
             }
         });
     }
+    // Formata o CNPJ em tempo real: 00.000.000/0000-00
+document.getElementById('c-cnpj').addEventListener('input', function(e) {
+    let v = e.target.value.replace(/\D/g, ""); // Remove tudo que não é número
+    if (v.length > 14) v = v.slice(0, 14);
+    
+    v = v.replace(/^(\dt{2})(\dt{3})/, "$1.$2");
+    v = v.replace(/^(\dt{2})\.(\dt{3})(\dt{3})/, "$1.$2.$3");
+    v = v.replace(/\.(\dt{3})(\dt{4})/, ".$1/$2");
+    v = v.replace(/(\dt{4})(\dt{2})$/, "$1-$2");
+    
+    e.target.value = v;
+});
 
-   async function saveCli() {
+  async function saveCli() {
     const id = document.getElementById('c-id').value;
     const cnpj = document.getElementById('c-cnpj').value.trim();
     const nome = document.getElementById('c-nome').value.trim();
+    const marcaSelecionada = document.getElementById('c-rep').value;
 
-    // Trava de segurança: impede salvar sem nome ou CNPJ
     if (!nome || !cnpj) {
-        alert("Para manter o registro completo, os campos Razão Social e CNPJ são obrigatórios.");
+        alert("Campos Razão Social e CNPJ são obrigatórios para a gestão estratégica Bertazo.");
         return;
     }
 
     const p = {
         nome: nome, 
         cnpj: cnpj,
-        representada: document.getElementById('c-rep').value, 
+        representada: marcaSelecionada, 
         whatsapp: document.getElementById('c-whats').value,
         contato: document.getElementById('c-contato').value, 
         endereco: document.getElementById('c-end').value,
         observacoes: document.getElementById('c-obs').value
     };
 
-    // Lógica de Unificação por CNPJ
     if (!id) {
-        const { data: existing } = await sb
-            .from('clientes')
-            .select('id')
-            .eq('cnpj', cnpj)
-            .maybeSingle();
+        // Dentro da saveCli, substitua a busca do existing por esta:
+const cnpjLimpo = cnpj.replace(/\D/g, "");
+const { data: existing } = await sb.from('clientes')
+    .select('*')
+    .or(`cnpj.eq.${cnpj},cnpj.eq.${cnpjLimpo}`) // Busca com ou sem formatação
+    .maybeSingle();
 
         if (existing) {
-            if(confirm("CNPJ já cadastrado. Deseja atualizar a ficha existente deste cliente?")) {
-                await sb.from('clientes').update(p).eq('id', existing.id);
-            } else { return; }
+            let marcasFinais = existing.representada || "";
+            
+            // Se a marca nova não estiver na ficha, pergunta se quer adicionar
+            if (!marcasFinais.includes(marcaSelecionada)) {
+                if (confirm(`Cliente já cadastrado em: ${marcasFinais}. Deseja adicionar ${marcaSelecionada} a esta ficha?`)) {
+                    p.representada = `${marcasFinais}, ${marcaSelecionada}`;
+                } else {
+                    return; // Cancela a operação
+                }
+            } else {
+                p.representada = marcasFinais; // Mantém como está
+            }
+            await sb.from('clientes').update(p).eq('id', existing.id);
         } else {
             await sb.from('clientes').insert([p]);
         }
@@ -373,7 +395,7 @@
         await sb.from('clientes').update(p).eq('id', id);
     }
 
-    // Limpeza dos campos
+    // Limpeza
     document.getElementById('c-id').value = "";
     document.querySelectorAll('#s-cli input, #s-cli textarea').forEach(i => i.value="");
     loadCli();
@@ -384,18 +406,30 @@
     rawClientes = data || [];
     const term = document.getElementById('f-cli-search').value.toLowerCase();
     const rep = document.getElementById('f-cli-rep').value;
-    const filtered = rawClientes.filter(c => (c.nome.toLowerCase().includes(term) || (c.cnpj && c.cnpj.includes(term))) && (rep==="" || c.representada===rep));
+
+    const filtered = rawClientes.filter(c => {
+        const matchSearch = c.nome.toLowerCase().includes(term) || (c.cnpj && c.cnpj.includes(term));
+        // Ajuste inteligente: verifica se a marca selecionada está contida na string de representadas
+        const matchRep = rep === "" || (c.representada && c.representada.includes(rep));
+        return matchSearch && matchRep;
+    });
 
     document.getElementById('cli-list').innerHTML = filtered.map(c => `
-        <div class="client-item" style="border-left: 4px solid ${brandColors[c.representada]}">
+        <div class="client-item" style="border-left: 4px solid ${c.representada.includes(',') ? '#7f8c8d' : (brandColors[c.representada] || '#ccc')}">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div>
                     <strong style="font-size:13px;">${c.nome}</strong>
-                    <span class="badge" style="background:${brandColors[c.representada]}22; color:${brandColors[c.representada]}; margin-left:8px;">${c.representada}</span>
+                    <div style="display:inline-flex; gap:4px; margin-left:8px;">
+                        ${c.representada.split(',').map(r => `
+                            <span class="badge" style="background:${brandColors[r.trim()] || '#ccc'}22; color:${brandColors[r.trim()] || '#777'};">
+                                ${r.trim()}
+                            </span>
+                        `).join('')}
+                    </div>
                 </div>
                 <div style="display:flex; gap:10px;">
                     <button onclick="editCli('${c.id}')" style="border:none; background:none; cursor:pointer; font-size:12px;" title="Editar">✏️</button>
-                    <button onclick="del('clientes', '${c.id}', loadCli)" style="border:none; background:none; cursor:pointer; font-size:12px; filter: grayscale(1);" title="Excluir Ficha">🗑️</button>
+                    <button onclick="del('clientes', '${c.id}', loadCli)" style="border:none; background:none; cursor:pointer; font-size:12px; opacity:0.3;" title="Excluir Ficha">🗑️</button>
                 </div>
             </div>
             <div style="font-size:11px; color:#7f8c8d; margin-top:5px; display:flex; gap:15px;">
@@ -476,7 +510,9 @@
         doc.text(`Total Clientes: ${document.getElementById('kpi-total-cli').innerText}`, 20, 40);
         doc.save("Bertazo_Relatorio_BI.pdf");
     }
+
 </script>
 </body>
 </html>
+
 
