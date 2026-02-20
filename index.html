@@ -302,7 +302,15 @@
 
     async function loadBI() {
         const mes = document.getElementById('f-mes-bi').value;
-        const { data: vData } = await sb.from('vendas').select('*').gte('data_venda', `${mes}-01`).lte('data_venda', `${mes}-31`);
+        if (!mes) return;
+
+        // CORREÇÃO: Cálculo dinâmico do fim do mês para evitar erros em meses com menos de 31 dias
+        const dataInicio = `${mes}-01`;
+        const dObj = new Date(mes + "-01T00:00:00");
+        dObj.setMonth(dObj.setMonth() + 1);
+        const dataFim = dObj.toISOString().split('T')[0];
+
+        const { data: vData } = await sb.from('vendas').select('*').gte('data_venda', dataInicio).lt('data_venda', dataFim);
         const { data: vTotal } = await sb.from('vendas').select('data_venda, valor');
         const { data: cData } = await sb.from('clientes').select('representada');
         const { data: lData } = await sb.from('licitacoes').select('*');
@@ -321,6 +329,9 @@
             document.getElementById('kpi-vip-val').innerText = vips[0][1].toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
             const top3 = vips.slice(0,3);
             updateChart('chartTopCli', 'bar', top3.map(x=>x[0]), top3.map(x=>x[1]), 'Volume R$', ["#5CACEE", "#9acd32", "#CD3278"]);
+        } else {
+            document.getElementById('kpi-vip-nome').innerText = "-";
+            document.getElementById('kpi-vip-val').innerText = "R$ 0,00";
         }
 
         if(lData && lData.length) {
@@ -395,7 +406,8 @@
         const p = {
             nome, cnpj, representada: selecaoOpts.join(', '), 
             whatsapp: document.getElementById('c-whats').value, contato: document.getElementById('c-contato').value, 
-            endereco: document.getElementById('c-end').value, observacoes: document.getElementById('c-obs').value
+            endereco: document.getElementById('c-end').value, observacoes: document.getElementById('c-obs').value,
+            email_financeiro: document.getElementById('c-email').value
         };
         if (!id) {
             const { data: existing } = await sb.from('clientes').select('*').eq('cnpj', cnpj).maybeSingle();
@@ -457,23 +469,44 @@
         Array.from(document.getElementById('c-rep').options).forEach(opt => opt.selected = marcas.includes(opt.value));
         document.getElementById('c-whats').value = c.whatsapp || "";
         document.getElementById('c-contato').value = c.contato || "";
+        document.getElementById('c-email').value = c.email_financeiro || "";
         document.getElementById('c-end').value = c.endereco || "";
         document.getElementById('c-obs').value = c.observacoes || "";
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
     async function saveVenda() {
+        const vData = document.getElementById('v-data').value;
+        const vCli = document.getElementById('v-cli').value;
+        const vVal = parseFloat(document.getElementById('v-val').value);
+        const vRep = document.getElementById('v-rep').value;
+        const vNf = document.getElementById('v-nf').value;
+
+        if(!vData || !vCli || isNaN(vVal)) { alert("Preencha Data, Cliente e Valor."); return; }
+
         await sb.from('vendas').insert([{
-            data_venda: document.getElementById('v-data').value, cliente_nome: document.getElementById('v-cli').value,
-            valor: parseFloat(document.getElementById('v-val').value), representada: document.getElementById('v-rep').value, nf: document.getElementById('v-nf').value
+            data_venda: vData, cliente_nome: vCli,
+            valor: vVal, representada: vRep, nf: vNf
         }]);
         loadVendas(); loadBI();
     }
 
     async function loadVendas() {
         const mes = document.getElementById('f-fat-mes').value;
-        const { data } = await sb.from('vendas').select('*').gte('data_venda', `${mes}-01`).lte('data_venda', `${mes}-31`).order('data_venda', {ascending:false});
-        document.querySelector('#t-vendas tbody').innerHTML = (data || []).map(v => `
+        if (!mes) return;
+
+        // CORREÇÃO: Filtro de data dinâmico para aba Vendas
+        const dataInicio = `${mes}-01`;
+        const dObj = new Date(mes + "-01T00:00:00");
+        dObj.setMonth(dObj.getMonth() + 1);
+        const dataFim = dObj.toISOString().split('T')[0];
+
+        const { data } = await sb.from('vendas').select('*').gte('data_venda', dataInicio).lt('data_venda', dataFim).order('data_venda', {ascending:false});
+        
+        const term = document.getElementById('f-fat-search').value.toLowerCase();
+        const filtered = (data || []).filter(v => v.cliente_nome.toLowerCase().includes(term) || (v.nf && v.nf.toLowerCase().includes(term)));
+
+        document.querySelector('#t-vendas tbody').innerHTML = filtered.map(v => `
             <tr>
                 <td>${v.data_venda.split('-').reverse().join('/')}</td>
                 <td><b>${v.cliente_nome}</b></td>
