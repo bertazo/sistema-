@@ -31,6 +31,7 @@
             --c-gazin: #B452CD;
             --c-plax-ms: #9acd32;
             --c-ariam: #EEC900;
+            --c-mix-badge: #BC8F8F;
         }
 
         * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; outline: none; }
@@ -54,7 +55,8 @@
         
         label { display: block; font-size: 10px; font-weight: 700; color: #7f8c8d; margin-bottom: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
         input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: #fcfcfc; }
-        
+        select[multiple] { padding: 5px; min-height: 85px; }
+
         .btn { background: var(--bordo); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; transition: 0.3s; }
         .btn:hover { opacity: 0.9; transform: translateY(-1px); }
         
@@ -69,10 +71,15 @@
         th { text-align: left; padding: 10px; color: #95a5a6; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
         td { padding: 10px; background: #fff; font-size: 12.5px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 
-        .badge { padding: 3px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; }
+        .badge { padding: 3px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; display: inline-block; margin-bottom: 2px;}
         
         .client-item { border: 1px solid var(--border); background: #fff; padding: 12px 18px; border-radius: 10px; margin-bottom: 8px; transition: 0.2s; }
         .obs-box { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #eee; font-size: 11px; color: #7f8c8d; }
+        
+        .action-btn { background: none; border: none; cursor: pointer; padding: 5px; opacity: 0.6; transition: 0.2s; }
+        .action-btn:hover { opacity: 1; }
+        .action-btn.del { opacity: 0.3; }
+        .action-btn.del:hover { opacity: 1; }
     </style>
 </head>
 <body>
@@ -122,8 +129,9 @@
                 <div class="card"><label>Faturamento por Marca</label><canvas id="chartRepresentadas"></canvas></div>
                 <div class="card"><label>Top 3 Clientes do Mês</label><canvas id="chartTopCli"></canvas></div>
                 <div class="card"><label>Sazonalidade de Vendas</label><canvas id="chartSazonalidade"></canvas></div>
-                <div class="card"><label>Market Share da Carteira</label><canvas id="chartCliRep"></canvas></div>
-                <div class="card"><label>Status de Contratos (Licitações)</label><canvas id="chartLicStatus"></canvas></div>
+                <div class="card"><label>Market Share da Carteira (Por Marca)</label><canvas id="chartCliRep"></canvas></div>
+                <div class="card"><label>Mix de Representadas (Cross-Sell)</label><canvas id="chartMixMarcas"></canvas></div>
+                <div class="card" style="grid-column: 1 / -1;"><label>Status de Contratos (Licitações)</label><canvas id="chartLicStatus"></canvas></div>
             </div>
         </section>
 
@@ -136,23 +144,30 @@
                 <input type="hidden" id="c-id">
                 <div class="grid">
                     <div><label>Razão Social</label><input type="text" id="c-nome"></div>
-                    <div><label>CNPJ</label><input type="text" id="c-cnpj"></div>
-                    <div><label>Representada</label>
-                        <select id="c-rep">
-                            <option>PLAXMETAL PR</option><option>PLAXMETAL MS/MT</option><option>LUNASA</option><option>GEBB</option><option>ARIAM</option><option>ADVENTISTA</option><option>GAZIN</option>
+                    <div><label>CNPJ</label><input type="text" id="c-cnpj" oninput="maskCNPJ(this)"></div>
+                    <div><label>Representada <span style="font-size:8px; color:#aaa; font-weight:normal;">(CTRL p/ selecionar várias)</span></label>
+                        <select id="c-rep" multiple size="4">
+                            <option value="PLAXMETAL PR">PLAXMETAL PR</option>
+                            <option value="PLAXMETAL MS/MT">PLAXMETAL MS/MT</option>
+                            <option value="LUNASA">LUNASA</option>
+                            <option value="GEBB">GEBB</option>
+                            <option value="ARIAM">ARIAM</option>
+                            <option value="ADVENTISTA">ADVENTISTA</option>
+                            <option value="GAZIN">GAZIN</option>
                         </select>
                     </div>
                 </div>
                 <div class="grid">
-                    <div><label>WhatsApp</label><input type="text" id="c-whats"></div>
+                    <div><label>WhatsApp</label><input type="text" id="c-whats" oninput="maskTel(this)"></div>
                     <div><label>Contato</label><input type="text" id="c-contato"></div>
+                    <div><label>E-mail Financeiro</label><input type="email" id="c-email"></div>
                     <div><label>Localização</label><input type="text" id="c-end"></div>
                 </div>
                 <label>Notas Estratégicas</label><textarea id="c-obs" rows="2" style="resize:none;"></textarea>
                 <button class="btn" style="margin-top:10px; width:150px" onclick="saveCli()">SALVAR</button>
             </div>
             <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <input type="text" id="f-cli-search" placeholder="Buscar..." oninput="loadCli()" style="flex:2">
+                <input type="text" id="f-cli-search" placeholder="Buscar Cliente, CNPJ ou Observação..." oninput="loadCli()" style="flex:2">
                 <select id="f-cli-rep" onchange="loadCli()" style="flex:1"><option value="">Todas as Marcas</option>
                     <option>PLAXMETAL PR</option><option>PLAXMETAL MS/MT</option><option>LUNASA</option><option>GEBB</option><option>ARIAM</option><option>ADVENTISTA</option><option>GAZIN</option>
                 </select>
@@ -168,7 +183,11 @@
                 </div>
                 <div class="grid">
                     <div><label>Data</label><input type="date" id="v-data"></div>
-                    <div><label>Cliente</label><input type="text" id="v-cli"></div>
+                    <div>
+                        <label>Cliente</label>
+                        <input type="text" id="v-cli" list="clientes-datalist">
+                        <datalist id="clientes-datalist"></datalist>
+                    </div>
                     <div><label>Valor (R$)</label><input type="number" id="v-val" step="0.01"></div>
                     <div><label>Marca</label>
                         <select id="v-rep">
@@ -217,9 +236,17 @@
     const sb = supabase.createClient(SB_URL, SB_KEY);
 
     const brandColors = {
-        "PLAXMETAL PR": "#A52A2A", "GEBB": "#5CACEE", "LUNASA": "#EE9A00", "ADVENTISTA": "#CD3278",
-        "GAZIN": "#B452CD", "PLAXMETAL MS/MT": "#9acd32", "ARIAM": "#EEC900"
+        "PLAXMETAL PR": "#A52A2A", 
+        "GEBB": "#5CACEE", 
+        "LUNASA": "#EE9A00", 
+        "ADVENTISTA": "#CD3278",
+        "GAZIN": "#B452CD", 
+        "PLAXMETAL MS/MT": "#9acd32", 
+        "ARIAM": "#EEC900"
     };
+
+    const ICON_EDIT = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
+    const ICON_DEL = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
     
     let charts = {};
     let rawClientes=[], rawVendas=[];
@@ -249,6 +276,22 @@
         loadBI(); loadCli(); loadVendas(); loadLic();
     }
 
+    function maskCNPJ(i) {
+        let v = i.value.replace(/\D/g, "");
+        v = v.replace(/^(\d{2})(\d)/, "$1.$2");
+        v = v.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+        v = v.replace(/\.(\d{3})(\d)/, ".$1/$2");
+        v = v.replace(/(\d{4})(\d)/, "$1-$2");
+        i.value = v.substring(0, 18);
+    }
+
+    function maskTel(i) {
+        let v = i.value.replace(/\D/g, "");
+        v = v.replace(/^(\d{2})(\d)/, "($1) $2");
+        v = v.replace(/(\d{5})(\d)/, "$1-$2");
+        i.value = v.substring(0, 15);
+    }
+
     function tab(t) {
         document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
@@ -276,42 +319,52 @@
             const vips = Object.entries(vol).sort((a,b) => b[1]-a[1]);
             document.getElementById('kpi-vip-nome').innerText = vips[0][0];
             document.getElementById('kpi-vip-val').innerText = vips[0][1].toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
-            
             const top3 = vips.slice(0,3);
-            updateChart('chartTopCli', 'bar', top3.map(x=>x[0]), top3.map(x=>x[1]), 'Volume R$', [brandColors["PLAXMETAL PR"], brandColors["GEBB"], brandColors["LUNASA"]]);
+            updateChart('chartTopCli', 'bar', top3.map(x=>x[0]), top3.map(x=>x[1]), 'Volume R$', ["#5CACEE", "#9acd32", "#CD3278"]);
         }
 
         if(lData && lData.length) {
             const ganhas = lData.filter(x => x.status === 'Ganha' || x.status === 'Faturada').length;
             document.getElementById('kpi-lic-win').innerText = Math.round((ganhas/lData.length)*100) + "%";
-            
             const licStatus = {};
             lData.forEach(l => licStatus[l.status] = (licStatus[l.status]||0)+1);
-            updateChart('chartLicStatus', 'polarArea', Object.keys(licStatus), Object.values(licStatus), 'Processos', ['#f1c40f', '#2ecc71', '#e74c3c', '#3498db']);
+            updateChart('chartLicStatus', 'polarArea', Object.keys(licStatus), Object.values(licStatus), 'Processos', ['#EE9A00', '#CD3278', '#A52A2A', '#9acd32']);
         }
 
         const saz = {};
         (vTotal || []).forEach(v => { const m = v.data_venda.slice(0,7); saz[m] = (saz[m]||0)+v.valor; });
         const last6 = Object.keys(saz).sort().slice(-6);
-        updateChart('chartSazonalidade', 'line', last6, last6.map(k=>saz[k]), 'Histórico Mensal', [brandColors["PLAXMETAL PR"]], true);
-
+        updateChart('chartSazonalidade', 'line', last6, last6.map(k=>saz[k]), 'Histórico Mensal', ["#A52A2A"], true);
         renderCharts(vendas, cData || []);
     }
 
     function renderCharts(vendas, clientes) {
         const ev = {}; 
         vendas.forEach(v => { const d = v.data_venda.split('-')[2]; ev[d] = (ev[d]||0)+v.valor; });
-        updateChart('chartEvolucao', 'line', Object.keys(ev).sort(), Object.values(ev), 'Faturamento Diário', [brandColors["PLAXMETAL PR"]], true);
-        
+        updateChart('chartEvolucao', 'line', Object.keys(ev).sort(), Object.values(ev), 'Faturamento Diário', ["#A52A2A"], true);
         const repV = {}; 
         vendas.forEach(v => { repV[v.representada] = (repV[v.representada]||0)+v.valor; });
         const labelsV = Object.keys(repV);
-        updateChart('chartRepresentadas', 'doughnut', labelsV, Object.values(repV), 'R$', labelsV.map(l => brandColors[l] || '#ccc'));
-
+        updateChart('chartRepresentadas', 'doughnut', labelsV, Object.values(repV), 'R$', labelsV.map(l => brandColors[l] || '#34495e'));
         const repC = {}; 
-        clientes.forEach(c => { repC[c.representada] = (repC[c.representada]||0)+1; });
+        clientes.forEach(c => { 
+            if(c.representada) {
+                c.representada.split(',').forEach(r => {
+                    const rLimpo = r.trim();
+                    if(rLimpo) repC[rLimpo] = (repC[rLimpo] || 0) + 1;
+                });
+            }
+        });
         const labelsC = Object.keys(repC);
-        updateChart('chartCliRep', 'pie', labelsC, Object.values(repC), 'Clientes', labelsC.map(l => brandColors[l] || '#ccc'));
+        updateChart('chartCliRep', 'pie', labelsC, Object.values(repC), 'Clientes', labelsC.map(l => brandColors[l] || '#34495e'));
+        let mix1 = 0; let mixMais = 0;
+        clientes.forEach(c => {
+            if(c.representada) {
+                const qtd = c.representada.split(',').filter(x => x.trim() !== '').length;
+                if(qtd === 1) mix1++; else if(qtd > 1) mixMais++;
+            }
+        });
+        updateChart('chartMixMarcas', 'doughnut', ['Mono Marca', 'Mix Estratégico'], [mix1, mixMais], 'Clientes', ['#EEC900', '#B452CD']);
     }
 
     function updateChart(id, type, labels, data, label, colors, fill = false) {
@@ -332,123 +385,80 @@
             }
         });
     }
-    // Formata o CNPJ em tempo real: 00.000.000/0000-00
-document.getElementById('c-cnpj').addEventListener('input', function(e) {
-    let v = e.target.value.replace(/\D/g, ""); // Remove tudo que não é número
-    if (v.length > 14) v = v.slice(0, 14);
-    
-    v = v.replace(/^(\dt{2})(\dt{3})/, "$1.$2");
-    v = v.replace(/^(\dt{2})\.(\dt{3})(\dt{3})/, "$1.$2.$3");
-    v = v.replace(/\.(\dt{3})(\dt{4})/, ".$1/$2");
-    v = v.replace(/(\dt{4})(\dt{2})$/, "$1-$2");
-    
-    e.target.value = v;
-});
 
-  async function saveCli() {
-    const id = document.getElementById('c-id').value;
-    const cnpj = document.getElementById('c-cnpj').value.trim();
-    const nome = document.getElementById('c-nome').value.trim();
-    const marcaSelecionada = document.getElementById('c-rep').value;
-
-    if (!nome || !cnpj) {
-        alert("Campos Razão Social e CNPJ são obrigatórios para a gestão estratégica Bertazo.");
-        return;
+    async function saveCli() {
+        const id = document.getElementById('c-id').value;
+        const cnpj = document.getElementById('c-cnpj').value.trim();
+        const nome = document.getElementById('c-nome').value.trim();
+        const selecaoOpts = Array.from(document.getElementById('c-rep').selectedOptions).map(opt => opt.value);
+        if (!nome || !cnpj || selecaoOpts.length === 0) { alert("Nome, CNPJ e Marca são obrigatórios."); return; }
+        const p = {
+            nome, cnpj, representada: selecaoOpts.join(', '), 
+            whatsapp: document.getElementById('c-whats').value, contato: document.getElementById('c-contato').value, 
+            endereco: document.getElementById('c-end').value, observacoes: document.getElementById('c-obs').value
+        };
+        if (!id) {
+            const { data: existing } = await sb.from('clientes').select('*').eq('cnpj', cnpj).maybeSingle();
+            if (existing) {
+                let marcas = existing.representada ? existing.representada.split(',').map(s=>s.trim()) : [];
+                let novas = selecaoOpts.filter(o => !marcas.includes(o));
+                if (novas.length > 0 && confirm(`Adicionar ${novas.join(', ')} a este cliente?`)) {
+                    p.representada = [...marcas, ...novas].join(', ');
+                } else if(novas.length > 0) return;
+                await sb.from('clientes').update(p).eq('id', existing.id);
+            } else { await sb.from('clientes').insert([p]); }
+        } else { await sb.from('clientes').update(p).eq('id', id); }
+        document.querySelectorAll('#s-cli input, #s-cli textarea').forEach(i => i.value="");
+        Array.from(document.getElementById('c-rep').options).forEach(o => o.selected = false);
+        loadCli();
     }
 
-    const p = {
-        nome: nome, 
-        cnpj: cnpj,
-        representada: marcaSelecionada, 
-        whatsapp: document.getElementById('c-whats').value,
-        contato: document.getElementById('c-contato').value, 
-        endereco: document.getElementById('c-end').value,
-        observacoes: document.getElementById('c-obs').value
-    };
-
-    if (!id) {
-        // Dentro da saveCli, substitua a busca do existing por esta:
-const cnpjLimpo = cnpj.replace(/\D/g, "");
-const { data: existing } = await sb.from('clientes')
-    .select('*')
-    .or(`cnpj.eq.${cnpj},cnpj.eq.${cnpjLimpo}`) // Busca com ou sem formatação
-    .maybeSingle();
-
-        if (existing) {
-            let marcasFinais = existing.representada || "";
-            
-            // Se a marca nova não estiver na ficha, pergunta se quer adicionar
-            if (!marcasFinais.includes(marcaSelecionada)) {
-                if (confirm(`Cliente já cadastrado em: ${marcasFinais}. Deseja adicionar ${marcaSelecionada} a esta ficha?`)) {
-                    p.representada = `${marcasFinais}, ${marcaSelecionada}`;
-                } else {
-                    return; // Cancela a operação
-                }
-            } else {
-                p.representada = marcasFinais; // Mantém como está
-            }
-            await sb.from('clientes').update(p).eq('id', existing.id);
-        } else {
-            await sb.from('clientes').insert([p]);
-        }
-    } else {
-        await sb.from('clientes').update(p).eq('id', id);
-    }
-
-    // Limpeza
-    document.getElementById('c-id').value = "";
-    document.querySelectorAll('#s-cli input, #s-cli textarea').forEach(i => i.value="");
-    loadCli();
-}
-
-   async function loadCli() {
-    const { data } = await sb.from('clientes').select('*').order('nome');
-    rawClientes = data || [];
-    const term = document.getElementById('f-cli-search').value.toLowerCase();
-    const rep = document.getElementById('f-cli-rep').value;
-
-    const filtered = rawClientes.filter(c => {
-        const matchSearch = c.nome.toLowerCase().includes(term) || (c.cnpj && c.cnpj.includes(term));
-        // Ajuste inteligente: verifica se a marca selecionada está contida na string de representadas
-        const matchRep = rep === "" || (c.representada && c.representada.includes(rep));
-        return matchSearch && matchRep;
-    });
-
-    document.getElementById('cli-list').innerHTML = filtered.map(c => `
-        <div class="client-item" style="border-left: 4px solid ${c.representada.includes(',') ? '#7f8c8d' : (brandColors[c.representada] || '#ccc')}">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <strong style="font-size:13px;">${c.nome}</strong>
-                    <div style="display:inline-flex; gap:4px; margin-left:8px;">
-                        ${c.representada.split(',').map(r => `
-                            <span class="badge" style="background:${brandColors[r.trim()] || '#ccc'}22; color:${brandColors[r.trim()] || '#777'};">
-                                ${r.trim()}
-                            </span>
-                        `).join('')}
+    async function loadCli() {
+        const { data } = await sb.from('clientes').select('*').order('nome');
+        rawClientes = data || [];
+        const dList = document.getElementById('clientes-datalist');
+        dList.innerHTML = rawClientes.map(c => `<option value="${c.nome}">`).join('');
+        const term = document.getElementById('f-cli-search').value.toLowerCase();
+        const rep = document.getElementById('f-cli-rep').value;
+        const filtered = rawClientes.filter(c => {
+            const matchS = c.nome.toLowerCase().includes(term) || (c.cnpj && c.cnpj.includes(term)) || (c.observacoes && c.observacoes.toLowerCase().includes(term));
+            const matchR = rep === "" || (c.representada && c.representada.includes(rep));
+            return matchS && matchR;
+        });
+        document.getElementById('cli-list').innerHTML = filtered.map(c => {
+            const marcasArr = (c.representada || '').split(',').filter(x=>x.trim());
+            const isMix = marcasArr.length > 1;
+            const sideColor = isMix ? '#BC8F8F' : (brandColors[marcasArr[0]?.trim()] || '#ccc');
+            return `
+            <div class="client-item" style="border-left: 4px solid ${sideColor}">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <strong style="font-size:14px;">${c.nome}</strong>
+                        <div style="display:inline-flex; flex-wrap:wrap; gap:4px; margin-left:8px;">
+                            ${marcasArr.map(r => `<span class="badge" style="background:#f1f3f5; color:#495057; border: 1px solid #e9ecef;">${r.trim()}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <button onclick="editCli('${c.id}')" class="action-btn">${ICON_EDIT}</button>
+                        <button onclick="del('clientes', '${c.id}', loadCli)" class="action-btn del">${ICON_DEL}</button>
                     </div>
                 </div>
-                <div style="display:flex; gap:10px;">
-                    <button onclick="editCli('${c.id}')" style="border:none; background:none; cursor:pointer; font-size:12px;" title="Editar">✏️</button>
-                    <button onclick="del('clientes', '${c.id}', loadCli)" style="border:none; background:none; cursor:pointer; font-size:12px; opacity:0.3;" title="Excluir Ficha">🗑️</button>
-                </div>
-            </div>
-            <div style="font-size:11px; color:#7f8c8d; margin-top:5px; display:flex; gap:15px;">
-                <span>CNPJ: ${c.cnpj || '-'}</span> <span>📍 ${c.endereco || '-'}</span> <span>📞 ${c.whatsapp || '-'}</span>
-            </div>
-            ${c.observacoes ? `<div class="obs-box">${c.observacoes}</div>` : ''}
-        </div>`).join('');
-}
-    
+                <div style="font-size:11px; color:#7f8c8d; margin-top:5px;">CNPJ: ${c.cnpj} | 📍 ${c.endereco || '-'} | 📞 ${c.whatsapp || '-'} | 👤 ${c.contato || '-'}</div>
+                ${c.observacoes ? `<div class="obs-box">${c.observacoes}</div>` : ''}
+            </div>`}).join('');
+    }
+
     function editCli(id) {
         const c = rawClientes.find(x => x.id == id);
         document.getElementById('c-id').value = c.id;
         document.getElementById('c-nome').value = c.nome;
         document.getElementById('c-cnpj').value = c.cnpj;
-        document.getElementById('c-rep').value = c.representada;
-        document.getElementById('c-whats').value = c.whatsapp;
-        document.getElementById('c-contato').value = c.contato;
-        document.getElementById('c-end').value = c.endereco;
-        document.getElementById('c-obs').value = c.observacoes;
+        const marcas = c.representada ? c.representada.split(',').map(m => m.trim()) : [];
+        Array.from(document.getElementById('c-rep').options).forEach(opt => opt.selected = marcas.includes(opt.value));
+        document.getElementById('c-whats').value = c.whatsapp || "";
+        document.getElementById('c-contato').value = c.contato || "";
+        document.getElementById('c-end').value = c.endereco || "";
+        document.getElementById('c-obs').value = c.observacoes || "";
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
@@ -470,7 +480,7 @@ const { data: existing } = await sb.from('clientes')
                 <td style="color:var(--bordo); font-weight:700;">R$ ${v.valor.toLocaleString('pt-BR')}</td>
                 <td><span class="badge" style="border:1px solid ${brandColors[v.representada]}; color:${brandColors[v.representada]}">${v.representada}</span></td>
                 <td>${v.nf||'-'}</td>
-                <td><button onclick="del('vendas','${v.id}', loadVendas)" style="color:#e74c3c; border:none; background:none; cursor:pointer; opacity:0.5">✕</button></td>
+                <td style="text-align:right;"><button onclick="del('vendas','${v.id}', loadVendas)" class="action-btn del">${ICON_DEL}</button></td>
             </tr>`).join('');
     }
 
@@ -487,19 +497,18 @@ const { data: existing } = await sb.from('clientes')
                 <td><b>${l.cliente}</b></td>
                 <td style="font-weight:600">R$ ${l.valor_total.toLocaleString('pt-BR')}</td>
                 <td><span class="badge" style="background:#eee; color:#666">${l.status}</span></td>
-                <td><button onclick="del('licitacoes','${l.id}', loadLic)" style="color:#e74c3c; border:none; background:none; cursor:pointer; opacity:0.5">✕</button></td>
+                <td style="text-align:right;"><button onclick="del('licitacoes','${l.id}', loadLic)" class="action-btn del">${ICON_DEL}</button></td>
             </tr>`).join('');
     }
 
-    async function del(t, id, cb) { if(confirm("Deseja realmente excluir este registro?")) { await sb.from(t).delete().eq('id', id); cb(); } }
+    async function del(t, id, cb) { if(confirm("Excluir registro?")) { await sb.from(t).delete().eq('id', id); cb(); } }
 
     async function exportExcel(table) {
         const { data } = await sb.from(table).select('*');
-        if(!data) return alert("Sem dados para exportar");
         const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, table);
-        XLSX.writeFile(wb, `Bertazo_${table}_${new Date().toLocaleDateString()}.xlsx`);
+        XLSX.writeFile(wb, `Bertazo_${table}.xlsx`);
     }
 
     function exportBIPDF() {
@@ -507,12 +516,8 @@ const { data: existing } = await sb.from('clientes')
         const doc = new jsPDF();
         doc.text("Relatório Estratégico Bertazo", 20, 20);
         doc.text(`Faturamento: ${document.getElementById('kpi-fat').innerText}`, 20, 30);
-        doc.text(`Total Clientes: ${document.getElementById('kpi-total-cli').innerText}`, 20, 40);
-        doc.save("Bertazo_Relatorio_BI.pdf");
+        doc.save(`Bertazo_Relatorio_${document.getElementById('f-mes-bi').value}.pdf`);
     }
-
 </script>
 </body>
 </html>
-
-
