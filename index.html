@@ -80,6 +80,10 @@
         .action-btn:hover { opacity: 1; }
         .action-btn.del { opacity: 0.3; }
         .action-btn.del:hover { opacity: 1; }
+
+        /* Estilo da Confirmação (Toast) */
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #27ae60; color: white; padding: 12px 30px; border-radius: 50px; font-weight: 600; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 10001; animation: slideUp 0.4s ease-out; }
+        @keyframes slideUp { from { bottom: -50px; opacity: 0; } to { bottom: 30px; opacity: 1; } }
     </style>
 </head>
 <body>
@@ -276,6 +280,15 @@
         loadBI(); loadCli(); loadVendas(); loadLic();
     }
 
+    // Função de Confirmação Visual
+    function showMsg(txt) {
+        const t = document.createElement('div');
+        t.className = 'toast';
+        t.innerText = txt;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+
     // Máscaras e UI
     function maskCNPJ(i) {
         let v = i.value.replace(/\D/g, "");
@@ -447,6 +460,7 @@
         document.querySelectorAll('#s-cli input, #s-cli textarea').forEach(i => i.value="");
         Array.from(document.getElementById('c-rep').options).forEach(o => o.selected = false);
         document.getElementById('c-id').value = "";
+        showMsg("Cliente registrado com sucesso!");
         loadCli();
     }
 
@@ -516,6 +530,12 @@
             data_venda: vData, cliente_nome: vCli,
             valor: vVal, representada: vRep, nf: vNf
         }]);
+        
+        showMsg("Venda confirmada com sucesso!");
+        document.getElementById('v-cli').value = "";
+        document.getElementById('v-val').value = "";
+        document.getElementById('v-nf').value = "";
+        
         loadVendas(); loadBI();
     }
 
@@ -546,7 +566,16 @@
 
     // --- LICITAÇÕES ---
     async function saveLic() {
-        await sb.from('licitacoes').insert([{ data_pedido: document.getElementById('l-data').value, cliente: document.getElementById('l-cli').value, valor_total: parseFloat(document.getElementById('l-val').value), status: document.getElementById('l-status').value }]);
+        await sb.from('licitacoes').insert([{ 
+            data_pedido: document.getElementById('l-data').value, 
+            cliente: document.getElementById('l-cli').value, 
+            valor_total: parseFloat(document.getElementById('l-val').value), 
+            status: document.getElementById('l-status').value 
+        }]);
+        
+        showMsg("Licitação cadastrada!");
+        document.getElementById('l-cli').value = "";
+        document.getElementById('l-val').value = "";
         loadLic();
     }
 
