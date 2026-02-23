@@ -120,6 +120,10 @@
                 <input type="month" id="f-mes-bi" onchange="loadBI()" style="width:160px; height:35px;">
                 <button class="btn" style="background:#2d3436; padding:0 15px; height:35px; font-size:10px;" onclick="exportBIPDF()">EXPORTAR RELATÓRIO PDF</button>
             </div>
+<div class="card" style="margin-top: 15px;">
+    <label>Análise Estratégica para o PDF</label>
+    <textarea id="analise-manual" rows="4" placeholder="Digite aqui as conclusões do mês para aparecerem na página 2 do relatório..." style="resize:vertical; margin-top:5px;"></textarea>
+</div>
             
             <div class="kpi-row">
                 <div class="kpi-card"><label>Faturamento</label><div id="kpi-fat" class="kpi-val">R$ 0,00</div></div>
@@ -280,13 +284,16 @@
         loadBI(); loadCli(); loadVendas(); loadLic();
     }
 
-    // Função de Confirmação Visual
+    // Função de Confirmação Visual (Toast)
     function showMsg(txt) {
         const t = document.createElement('div');
         t.className = 'toast';
         t.innerText = txt;
         document.body.appendChild(t);
-        setTimeout(() => t.remove(), 3000);
+        setTimeout(() => {
+            t.style.opacity = '0';
+            setTimeout(() => t.remove(), 300);
+        }, 3000);
     }
 
     // Máscaras e UI
@@ -460,7 +467,7 @@
         document.querySelectorAll('#s-cli input, #s-cli textarea').forEach(i => i.value="");
         Array.from(document.getElementById('c-rep').options).forEach(o => o.selected = false);
         document.getElementById('c-id').value = "";
-        showMsg("Cliente registrado com sucesso!");
+        showMsg("Cliente salvo com sucesso!");
         loadCli();
     }
 
@@ -530,9 +537,8 @@
             data_venda: vData, cliente_nome: vCli,
             valor: vVal, representada: vRep, nf: vNf
         }]);
-        
-        showMsg("Venda confirmada com sucesso!");
-        document.getElementById('v-cli').value = "";
+
+        showMsg("Venda registrada com sucesso!");
         document.getElementById('v-val').value = "";
         document.getElementById('v-nf').value = "";
         
@@ -601,13 +607,105 @@
         XLSX.writeFile(wb, `Bertazo_${table}.xlsx`);
     }
 
-    function exportBIPDF() {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        doc.text("Relatório Estratégico Bertazo", 20, 20);
-        doc.text(`Faturamento: ${document.getElementById('kpi-fat').innerText}`, 20, 30);
-        doc.save(`Bertazo_Relatorio_${document.getElementById('f-mes-bi').value}.pdf`);
-    }
+   function exportBIPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const mesReferencia = document.getElementById('f-mes-bi').value;
+    const corBordo = [99, 13, 22]; 
+    const textoAnalise = document.getElementById('analise-manual').value;
+
+    const aplicarLayout = (titulo) => {
+        const pageHeight = doc.internal.pageSize.height;
+        doc.setFillColor(corBordo[0], corBordo[1], corBordo[2]);
+        doc.rect(0, 0, 210, 35, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(22);
+        doc.setFont("helvetica", "bold");
+        doc.text(titulo, 105, 22, { align: "center" });
+        
+        doc.setFillColor(corBordo[0], corBordo[1], corBordo[2]);
+        doc.rect(0, pageHeight - 30, 210, 30, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(9);
+        doc.text("Att. Jéssica Bertazo | Representante Comercial", 105, pageHeight - 18, { align: "center" });
+        doc.text("E-mail: jessica_bertazo@hotmail.com | Fone: +55 (41) 9 9823-7713", 105, pageHeight - 13, { align: "center" });
+        doc.text("Umuarama - Pr.", 105, pageHeight - 8, { align: "center" });
+    };
+
+    // Mapeamento de IDs para Títulos explicativos
+    const infoGraficos = [
+        { id: 'chartEvolucao', titulo: "1. Evolução Diária de Vendas", desc: "Desempenho de faturamento ao longo dos dias do mês." },
+        { id: 'chartRepresentadas', titulo: "2. Faturamento por Marca", desc: "Distribuição percentual de vendas entre as representadas." },
+        { id: 'chartTopCli', titulo: "3. Top 3 Clientes", desc: "Os maiores volumes de compra do período atual." },
+        { id: 'chartSazonalidade', titulo: "4. Histórico Semestral", desc: "Comparativo de faturamento dos últimos 6 meses." },
+        { id: 'chartCliRep', titulo: "5. Market Share da Carteira", desc: "Volume de clientes atendidos por cada representada." },
+        { id: 'chartMixMarcas', titulo: "6. Mix de Representadas (Cross-Sell)", desc: "Proporção de clientes que compram uma ou mais marcas." },
+        { id: 'chartLicStatus', titulo: "7. Status de Licitações", desc: "Monitoramento dos processos licitatórios e taxas de ganho." }
+    ];
+
+    // --- PÁGINA 1: INÍCIO DOS GRÁFICOS ---
+    aplicarLayout("RELATÓRIO DE GESTÃO");
+    doc.setTextColor(corBordo[0], corBordo[1], corBordo[2]);
+    doc.setFontSize(10);
+    doc.text(`Referência: ${mesReferencia} | Faturamento: ${document.getElementById('kpi-fat').innerText}`, 15, 45);
+    doc.line(15, 48, 195, 48);
+
+    let posY = 55;
+    const larguraGrafico = 150; // Gráficos bem maiores (centrados)
+    const posX = (210 - larguraGrafico) / 2;
+
+    infoGraficos.forEach((item, index) => {
+        const canvas = document.getElementById(item.id);
+        if (canvas) {
+            const imgData = canvas.toDataURL('image/png', 1.0);
+            const imgProps = doc.getImageProperties(imgData);
+            const alturaCalculada = larguraGrafico * (imgProps.height / imgProps.width);
+
+            // Verifica se o gráfico cabe na página atual, se não, adiciona nova página
+            if (posY + alturaCalculada > 250) {
+                doc.addPage();
+                aplicarLayout("RELATÓRIO DE GESTÃO (CONT.)");
+                posY = 50;
+            }
+
+            // Título do Gráfico
+            doc.setTextColor(corBordo[0], corBordo[1], corBordo[2]);
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text(item.titulo, posX, posY);
+            
+            // Descrição breve
+            doc.setTextColor(100);
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "italic");
+            doc.text(item.desc, posX, posY + 5);
+
+            // Imagem do Gráfico
+            doc.addImage(imgData, 'PNG', posX, posY + 8, larguraGrafico, alturaCalculada);
+            
+            posY += alturaCalculada + 25; // Espaço para o próximo título
+        }
+    });
+
+    // --- ÚLTIMA PÁGINA: ANÁLISE EDITÁVEL ---
+    doc.addPage();
+    aplicarLayout("ANÁLISE ESTRATÉGICA");
+
+    doc.setTextColor(44, 62, 80);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("Considerações e Resultados", 15, 50);
+    
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    
+    const textoFinal = textoAnalise || "Nenhuma observação adicional registrada para este período.";
+    const splitText = doc.splitTextToSize(textoFinal, 180);
+    doc.text(splitText, 15, 60);
+
+    doc.save(`Bertazo_Relatorio_${mesReferencia}.pdf`);
+    showMsg("Relatório profissional gerado!");
+}
 </script>
 </body>
 </html>
