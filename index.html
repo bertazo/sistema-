@@ -431,45 +431,53 @@
         });
     }
 
-    // --- CLIENTES ---
-    async function saveCli() {
-        const id = document.getElementById('c-id').value;
-        const cnpj = document.getElementById('c-cnpj').value.trim();
-        const nome = document.getElementById('c-nome').value.trim();
-        const selecaoOpts = Array.from(document.getElementById('c-rep').selectedOptions).map(opt => opt.value);
-        if (!nome || !cnpj || selecaoOpts.length === 0) { alert("Nome, CNPJ e Marca são obrigatórios."); return; }
-        
-        const p = {
-            nome, cnpj, representada: selecaoOpts.join(', '), 
-            whatsapp: document.getElementById('c-whats').value, 
-            contato: document.getElementById('c-contato').value, 
-            endereco: document.getElementById('c-end').value, 
-            observacoes: document.getElementById('c-obs').value,
-            email_financeiro: document.getElementById('c-email').value
-        };
-
-        if (!id) {
-            const { data: existing } = await sb.from('clientes').select('*').eq('cnpj', cnpj).maybeSingle();
-            if (existing) {
-                let marcas = existing.representada ? existing.representada.split(',').map(s=>s.trim()) : [];
-                let novas = selecaoOpts.filter(o => !marcas.includes(o));
-                if (novas.length > 0 && confirm(`Adicionar ${novas.join(', ')} a este cliente?`)) {
-                    p.representada = [...marcas, ...novas].join(', ');
-                } else if(novas.length > 0) return;
-                await sb.from('clientes').update(p).eq('id', existing.id);
-            } else { 
-                await sb.from('clientes').insert([p]); 
-            }
-        } else { 
-            await sb.from('clientes').update(p).eq('id', id); 
-        }
-        
-        document.querySelectorAll('#s-cli input, #s-cli textarea').forEach(i => i.value="");
-        Array.from(document.getElementById('c-rep').options).forEach(o => o.selected = false);
-        document.getElementById('c-id').value = "";
-        showMsg("Cliente salvo com sucesso!");
-        loadCli();
+async function saveCli() {
+    const id = document.getElementById('c-id').value;
+    const cnpj = document.getElementById('c-cnpj').value.trim();
+    const nome = document.getElementById('c-nome').value.trim();
+    const selecaoOpts = Array.from(document.getElementById('c-rep').selectedOptions).map(opt => opt.value);
+    
+    if (!nome || !cnpj || selecaoOpts.length === 0) { 
+        alert("Nome, CNPJ e Marca são obrigatórios."); 
+        return; 
     }
+    
+    const p = {
+        nome, cnpj, representada: selecaoOpts.join(', '), 
+        whatsapp: document.getElementById('c-whats').value, 
+        contato: document.getElementById('c-contato').value, 
+        endereco: document.getElementById('c-end').value, 
+        observacoes: document.getElementById('c-obs').value,
+        email_financeiro: document.getElementById('c-email').value
+    };
+
+    // Adicionamos o "await" aqui para esperar a operação terminar
+    if (!id) {
+        const { data: existing } = await sb.from('clientes').select('*').eq('cnpj', cnpj).maybeSingle();
+        if (existing) {
+            let marcas = existing.representada ? existing.representada.split(',').map(s=>s.trim()) : [];
+            let novas = selecaoOpts.filter(o => !marcas.includes(o));
+            if (novas.length > 0 && confirm(`Adicionar ${novas.join(', ')} a este cliente?`)) {
+                p.representada = [...marcas, ...novas].join(', ');
+            } else if(novas.length > 0) return;
+            await sb.from('clientes').update(p).eq('id', existing.id);
+        } else { 
+            await sb.from('clientes').insert([p]); 
+        }
+    } else { 
+        await sb.from('clientes').update(p).eq('id', id); 
+    }
+    
+    // Limpeza da UI
+    document.querySelectorAll('#s-cli input, #s-cli textarea').forEach(i => i.value="");
+    Array.from(document.getElementById('c-rep').options).forEach(o => o.selected = false);
+    document.getElementById('c-id').value = "";
+    
+    showMsg("Cliente salvo com sucesso!");
+    
+    // Forçamos o recarregamento da lista AGORA
+    await loadCli(); 
+}
 
     async function loadCli() {
         const { data } = await sb.from('clientes').select('*').order('nome');
@@ -709,3 +717,4 @@
 </script>
 </body>
 </html>
+
