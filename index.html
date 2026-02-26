@@ -51,7 +51,6 @@
         .container { max-width: 1400px; margin: 20px auto; padding: 0 40px; }
         .card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(149, 157, 165, 0.05); margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.02); }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 15px; }
-        .bi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
         
         label { display: block; font-size: 10px; font-weight: 700; color: #7f8c8d; margin-bottom: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
         input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: #fcfcfc; }
@@ -81,7 +80,6 @@
         .action-btn.del { opacity: 0.3; }
         .action-btn.del:hover { opacity: 1; }
 
-        /* Estilo da Confirmação (Toast) */
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #27ae60; color: white; padding: 12px 30px; border-radius: 50px; font-weight: 600; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 10001; animation: slideUp 0.4s ease-out; }
         @keyframes slideUp { from { bottom: -50px; opacity: 0; } to { bottom: 30px; opacity: 1; } }
     </style>
@@ -120,10 +118,10 @@
                 <input type="month" id="f-mes-bi" onchange="loadBI()" style="width:160px; height:35px;">
                 <button class="btn" style="background:#2d3436; padding:0 15px; height:35px; font-size:10px;" onclick="exportBIPDF()">EXPORTAR RELATÓRIO PDF</button>
             </div>
-<div class="card" style="margin-top: 15px;">
-    <label>Análise Estratégica para o PDF</label>
-    <textarea id="analise-manual" rows="4" placeholder="Digite aqui as conclusões do mês para aparecerem na página 2 do relatório..." style="resize:vertical; margin-top:5px;"></textarea>
-</div>
+            <div class="card" style="margin-top: 15px;">
+                <label>Análise Estratégica para o PDF</label>
+                <textarea id="analise-manual" rows="4" placeholder="Digite aqui as conclusões do mês para o relatório da Bertazo..." style="resize:vertical; margin-top:5px;"></textarea>
+            </div>
             
             <div class="kpi-row">
                 <div class="kpi-card"><label>Faturamento</label><div id="kpi-fat" class="kpi-val">R$ 0,00</div></div>
@@ -132,7 +130,7 @@
                 <div class="kpi-card"><label>Total de Clientes</label><div id="kpi-total-cli" class="kpi-val">0</div><div class="kpi-sub">Base Cadastrada</div></div>
             </div>
 
-            <div class="bi-grid">
+            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
                 <div class="card"><label>Performance de Vendas (Diário)</label><canvas id="chartEvolucao"></canvas></div>
                 <div class="card"><label>Faturamento por Marca</label><canvas id="chartRepresentadas"></canvas></div>
                 <div class="card"><label>Top 3 Clientes do Mês</label><canvas id="chartTopCli"></canvas></div>
@@ -146,7 +144,7 @@
         <section id="s-cli" class="hidden">
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                    <h3 style="margin:0; color:var(--bordo); font-size:16px;">Ficha Cadastral</h3>
+                    <h3 style="margin:0; color:var(--bordo); font-size:16px;">Ficha Cadastral Completa</h3>
                     <button class="btn" style="background:#27ae60; padding:5px 15px; font-size:10px;" onclick="exportExcel('clientes')">BAIXAR PLANILHA CLIENTES</button>
                 </div>
                 <input type="hidden" id="c-id">
@@ -168,11 +166,10 @@
                 <div class="grid">
                     <div><label>WhatsApp</label><input type="text" id="c-whats" oninput="maskTel(this)"></div>
                     <div><label>Contato</label><input type="text" id="c-contato"></div>
-                    <div><label>E-mail Financeiro</label><input type="email" id="c-email"></div>
                     <div><label>Localização</label><input type="text" id="c-end"></div>
                 </div>
                 <label>Notas Estratégicas</label><textarea id="c-obs" rows="2" style="resize:none;"></textarea>
-                <button class="btn" style="margin-top:10px; width:150px" onclick="saveCli()">SALVAR</button>
+                <button class="btn" style="margin-top:10px; width:150px" onclick="saveCli()">SALVAR NA FICHA</button>
             </div>
             <div style="display:flex; gap:10px; margin-bottom:15px;">
                 <input type="text" id="f-cli-search" placeholder="Buscar Cliente, CNPJ ou Observação..." oninput="loadCli()" style="flex:2">
@@ -204,7 +201,7 @@
                     </div>
                     <div><label>NF</label><input type="text" id="v-nf"></div>
                 </div>
-                <button class="btn" style="width:180px" onclick="saveVenda()">CONFIRMAR</button>
+                <button class="btn" style="width:180px" onclick="saveVenda()">CONFIRMAR VENDA</button>
             </div>
             <div class="card">
                 <div style="display:flex; gap:10px; margin-bottom:15px">
@@ -231,7 +228,7 @@
                         </select>
                     </div>
                 </div>
-                <button class="btn" style="width:180px" onclick="saveLic()">SALVAR</button>
+                <button class="btn" style="width:180px" onclick="saveLic()">SALVAR PROCESSO</button>
             </div>
             <table id="t-lic"><thead><tr><th>Data</th><th>Órgão</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
         </section>
@@ -284,7 +281,6 @@
         loadBI(); loadCli(); loadVendas(); loadLic();
     }
 
-    // Função de Confirmação Visual (Toast)
     function showMsg(txt) {
         const t = document.createElement('div');
         t.className = 'toast';
@@ -296,7 +292,6 @@
         }, 3000);
     }
 
-    // Máscaras e UI
     function maskCNPJ(i) {
         let v = i.value.replace(/\D/g, "");
         v = v.replace(/^(\d{2})(\d)/, "$1.$2");
@@ -319,168 +314,60 @@
         if(t==='bi') loadBI();
     }
 
-    // --- BI ---
-    async function loadBI() {
-        const mes = document.getElementById('f-mes-bi').value;
-        if (!mes) return;
-
-        const dataInicio = `${mes}-01`;
-        const dObj = new Date(mes + "-01T00:00:00");
-        dObj.setMonth(dObj.getMonth() + 1);
-        const dataFim = dObj.toISOString().split('T')[0];
-
-        const { data: vData } = await sb.from('vendas').select('*').gte('data_venda', dataInicio).lt('data_venda', dataFim);
-        const { data: vTotal } = await sb.from('vendas').select('data_venda, valor');
-        const { data: cData } = await sb.from('clientes').select('representada');
-        const { data: lData } = await sb.from('licitacoes').select('*');
-        const { count: totalClientes } = await sb.from('clientes').select('*', { count: 'exact', head: true });
+    async function saveCli() {
+        const id = document.getElementById('c-id').value;
+        const cnpj = document.getElementById('c-cnpj').value.trim();
+        const nome = document.getElementById('c-nome').value.trim();
+        const selecaoOpts = Array.from(document.getElementById('c-rep').selectedOptions).map(opt => opt.value);
         
-        const vendas = vData || [];
-        const total = vendas.reduce((a, b) => a + b.valor, 0);
-        document.getElementById('kpi-fat').innerText = total.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
-        document.getElementById('kpi-total-cli').innerText = totalClientes || 0;
-
-        // Top VIP
-        if(vendas.length > 0) {
-            const vol = {};
-            vendas.forEach(v => { vol[v.cliente_nome] = (vol[v.cliente_nome]||0)+v.valor; });
-            const vips = Object.entries(vol).sort((a,b) => b[1]-a[1]);
-            document.getElementById('kpi-vip-nome').innerText = vips[0][0];
-            document.getElementById('kpi-vip-val').innerText = vips[0][1].toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
-            const top3 = vips.slice(0,3);
-            updateChart('chartTopCli', 'bar', top3.map(x=>x[0]), top3.map(x=>x[1]), 'Volume R$', ["#5CACEE", "#9acd32", "#CD3278"]);
-        } else {
-            document.getElementById('kpi-vip-nome').innerText = "-";
-            document.getElementById('kpi-vip-val').innerText = "R$ 0,00";
-            if(charts['chartTopCli']) charts['chartTopCli'].destroy();
+        if (!nome || !cnpj || selecaoOpts.length === 0) { 
+            alert("Atenção: Nome, CNPJ e Marca são obrigatórios."); 
+            return; 
         }
-
-        // Licitações KPI
-        if(lData && lData.length) {
-            const ganhas = lData.filter(x => x.status === 'Ganha' || x.status === 'Faturada').length;
-            document.getElementById('kpi-lic-win').innerText = Math.round((ganhas/lData.length)*100) + "%";
-            const licStatus = {};
-            lData.forEach(l => licStatus[l.status] = (licStatus[l.status]||0)+1);
-            updateChart('chartLicStatus', 'polarArea', Object.keys(licStatus), Object.values(licStatus), 'Processos', ['#EE9A00', '#CD3278', '#A52A2A', '#9acd32']);
-        }
-
-        // Sazonalidade (Geral)
-        const saz = {};
-        (vTotal || []).forEach(v => { const m = v.data_venda.slice(0,7); saz[m] = (saz[m]||0)+v.valor; });
-        const last6 = Object.keys(saz).sort().slice(-6);
-        updateChart('chartSazonalidade', 'line', last6, last6.map(k=>saz[k]), 'Histórico Mensal', ["#A52A2A"], true);
         
-        renderCharts(vendas, cData || []);
-    }
+        const p = {
+            nome, cnpj, representada: selecaoOpts.join(', '), 
+            whatsapp: document.getElementById('c-whats').value, 
+            contato: document.getElementById('c-contato').value, 
+            endereco: document.getElementById('c-end').value, 
+            observacoes: document.getElementById('c-obs').value
+        };
 
-    function renderCharts(vendas, clientes) {
-        // Evolução Diária
-        const ev = {}; 
-        vendas.forEach(v => { const d = v.data_venda.split('-')[2]; ev[d] = (ev[d]||0)+v.valor; });
-        const labelsEv = Object.keys(ev).sort();
-        updateChart('chartEvolucao', 'line', labelsEv, labelsEv.map(l => ev[l]), 'Faturamento Diário', ["#A52A2A"], true);
-        
-        // Faturamento por Marca
-        const repV = {}; 
-        vendas.forEach(v => { repV[v.representada] = (repV[v.representada]||0)+v.valor; });
-        const labelsV = Object.keys(repV);
-        updateChart('chartRepresentadas', 'doughnut', labelsV, Object.values(repV), 'R$', labelsV.map(l => brandColors[l] || '#34495e'));
-        
-        // Clientes por Marca
-        const repC = {}; 
-        clientes.forEach(c => { 
-            if(c.representada) {
-                c.representada.split(',').forEach(r => {
-                    const rLimpo = r.trim();
-                    if(rLimpo) repC[rLimpo] = (repC[rLimpo] || 0) + 1;
-                });
+        let res;
+
+        if (!id) {
+            const { data: existing, error: searchError } = await sb.from('clientes').select('*').eq('cnpj', cnpj).maybeSingle();
+            if (searchError) { alert("Erro ao buscar: " + searchError.message); return; }
+
+            if (existing) {
+                let marcas = existing.representada ? existing.representada.split(',').map(s=>s.trim()) : [];
+                let novas = selecaoOpts.filter(o => !marcas.includes(o));
+                if (novas.length > 0 && confirm(`Adicionar ${novas.join(', ')} a este cliente?`)) {
+                    p.representada = [...marcas, ...novas].join(', ');
+                } else if(novas.length > 0) return;
+                res = await sb.from('clientes').update(p).eq('id', existing.id);
+            } else { 
+                res = await sb.from('clientes').insert([p]); 
             }
-        });
-        const labelsC = Object.keys(repC);
-        updateChart('chartCliRep', 'pie', labelsC, Object.values(repC), 'Clientes', labelsC.map(l => brandColors[l] || '#34495e'));
-        
-        // Mix
-        let mix1 = 0; let mixMais = 0;
-        clientes.forEach(c => {
-            if(c.representada) {
-                const qtd = c.representada.split(',').filter(x => x.trim() !== '').length;
-                if(qtd === 1) mix1++; else if(qtd > 1) mixMais++;
-            }
-        });
-        updateChart('chartMixMarcas', 'doughnut', ['Mono Marca', 'Mix Estratégico'], [mix1, mixMais], 'Clientes', ['#EEC900', '#B452CD']);
-    }
-
-    function updateChart(id, type, labels, data, label, colors, fill = false) {
-        if(charts[id]) charts[id].destroy();
-        const ctx = document.getElementById(id);
-        if(!ctx) return;
-        charts[id] = new Chart(ctx, {
-            type,
-            data: { 
-                labels, 
-                datasets: [{ 
-                    label, data, backgroundColor: colors, borderColor: '#ffffff', borderWidth: 2,
-                    fill: fill ? { target: 'origin', above: colors[0] + '15' } : false, tension: 0.4
-                }] 
-            },
-            options: { 
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, font: { size: 9, weight: 600 } } } },
-                scales: (type === 'line' || type === 'bar') ? { y: { ticks: {font:{size:9}}, grid: { color: '#f0f0f0' } }, x: { ticks: {font:{size:9}}, grid: { display: false } } } : {}
-            }
-        });
-    }
-
-async function saveCli() {
-    const id = document.getElementById('c-id').value;
-    const cnpj = document.getElementById('c-cnpj').value.trim();
-    const nome = document.getElementById('c-nome').value.trim();
-    const selecaoOpts = Array.from(document.getElementById('c-rep').selectedOptions).map(opt => opt.value);
-    
-    if (!nome || !cnpj || selecaoOpts.length === 0) { 
-        alert("Nome, CNPJ e Marca são obrigatórios."); 
-        return; 
-    }
-    
-    const p = {
-        nome, cnpj, representada: selecaoOpts.join(', '), 
-        whatsapp: document.getElementById('c-whats').value, 
-        contato: document.getElementById('c-contato').value, 
-        endereco: document.getElementById('c-end').value, 
-        observacoes: document.getElementById('c-obs').value,
-        email_financeiro: document.getElementById('c-email').value
-    };
-
-    // Adicionamos o "await" aqui para esperar a operação terminar
-    if (!id) {
-        const { data: existing } = await sb.from('clientes').select('*').eq('cnpj', cnpj).maybeSingle();
-        if (existing) {
-            let marcas = existing.representada ? existing.representada.split(',').map(s=>s.trim()) : [];
-            let novas = selecaoOpts.filter(o => !marcas.includes(o));
-            if (novas.length > 0 && confirm(`Adicionar ${novas.join(', ')} a este cliente?`)) {
-                p.representada = [...marcas, ...novas].join(', ');
-            } else if(novas.length > 0) return;
-            await sb.from('clientes').update(p).eq('id', existing.id);
         } else { 
-            await sb.from('clientes').insert([p]); 
+            res = await sb.from('clientes').update(p).eq('id', id); 
         }
-    } else { 
-        await sb.from('clientes').update(p).eq('id', id); 
+
+        if (res.error) {
+            alert("Erro ao salvar: " + res.error.message);
+        } else {
+            document.querySelectorAll('#s-cli input, #s-cli textarea').forEach(i => i.value="");
+            Array.from(document.getElementById('c-rep').options).forEach(o => o.selected = false);
+            document.getElementById('c-id').value = "";
+            showMsg("Registro Bertazo atualizado!");
+            loadCli();
+        }
     }
-    
-    // Limpeza da UI
-    document.querySelectorAll('#s-cli input, #s-cli textarea').forEach(i => i.value="");
-    Array.from(document.getElementById('c-rep').options).forEach(o => o.selected = false);
-    document.getElementById('c-id').value = "";
-    
-    showMsg("Cliente salvo com sucesso!");
-    
-    // Forçamos o recarregamento da lista AGORA
-    await loadCli(); 
-}
 
     async function loadCli() {
-        const { data } = await sb.from('clientes').select('*').order('nome');
+        const { data, error } = await sb.from('clientes').select('*').order('nome');
+        if(error) return;
+        
         rawClientes = data || [];
         const dList = document.getElementById('clientes-datalist');
         dList.innerHTML = rawClientes.map(c => `<option value="${c.nome}">`).join('');
@@ -518,6 +405,7 @@ async function saveCli() {
 
     function editCli(id) {
         const c = rawClientes.find(x => x.id == id);
+        if(!c) return;
         document.getElementById('c-id').value = c.id;
         document.getElementById('c-nome').value = c.nome;
         document.getElementById('c-cnpj').value = c.cnpj;
@@ -525,13 +413,11 @@ async function saveCli() {
         Array.from(document.getElementById('c-rep').options).forEach(opt => opt.selected = marcas.includes(opt.value));
         document.getElementById('c-whats').value = c.whatsapp || "";
         document.getElementById('c-contato').value = c.contato || "";
-        document.getElementById('c-email').value = c.email_financeiro || "";
         document.getElementById('c-end').value = c.endereco || "";
         document.getElementById('c-obs').value = c.observacoes || "";
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
-    // --- VENDAS ---
     async function saveVenda() {
         const vData = document.getElementById('v-data').value;
         const vCli = document.getElementById('v-cli').value;
@@ -541,28 +427,25 @@ async function saveCli() {
 
         if(!vData || !vCli || isNaN(vVal)) { alert("Preencha Data, Cliente e Valor."); return; }
 
-        await sb.from('vendas').insert([{
+        const { error } = await sb.from('vendas').insert([{
             data_venda: vData, cliente_nome: vCli,
             valor: vVal, representada: vRep, nf: vNf
         }]);
 
-        showMsg("Venda registrada com sucesso!");
-        document.getElementById('v-val').value = "";
-        document.getElementById('v-nf').value = "";
-        
-        loadVendas(); loadBI();
+        if(error) alert("Erro: " + error.message);
+        else { showMsg("Venda registrada!"); document.getElementById('v-val').value = ""; document.getElementById('v-nf').value = ""; loadVendas(); loadBI(); }
     }
 
     async function loadVendas() {
         const mes = document.getElementById('f-fat-mes').value;
         if (!mes) return;
-
         const dataInicio = `${mes}-01`;
         const dObj = new Date(mes + "-01T00:00:00");
         dObj.setMonth(dObj.getMonth() + 1);
         const dataFim = dObj.toISOString().split('T')[0];
 
-        const { data } = await sb.from('vendas').select('*').gte('data_venda', dataInicio).lt('data_venda', dataFim).order('data_venda', {ascending:false});
+        const { data, error } = await sb.from('vendas').select('*').gte('data_venda', dataInicio).lt('data_venda', dataFim).order('data_venda', {ascending:false});
+        if(error) return;
         
         const term = document.getElementById('f-fat-search').value.toLowerCase();
         const filtered = (data || []).filter(v => v.cliente_nome.toLowerCase().includes(term) || (v.nf && v.nf.toLowerCase().includes(term)));
@@ -578,19 +461,15 @@ async function saveCli() {
             </tr>`).join('');
     }
 
-    // --- LICITAÇÕES ---
     async function saveLic() {
-        await sb.from('licitacoes').insert([{ 
+        const { error } = await sb.from('licitacoes').insert([{ 
             data_pedido: document.getElementById('l-data').value, 
             cliente: document.getElementById('l-cli').value, 
             valor_total: parseFloat(document.getElementById('l-val').value), 
             status: document.getElementById('l-status').value 
         }]);
-        
-        showMsg("Licitação cadastrada!");
-        document.getElementById('l-cli').value = "";
-        document.getElementById('l-val').value = "";
-        loadLic();
+        if(error) alert("Erro: " + error.message);
+        else { showMsg("Processo salvo!"); document.getElementById('l-cli').value = ""; document.getElementById('l-val').value = ""; loadLic(); }
     }
 
     async function loadLic() {
@@ -605,7 +484,7 @@ async function saveCli() {
             </tr>`).join('');
     }
 
-    async function del(t, id, cb) { if(confirm("Excluir registro?")) { await sb.from(t).delete().eq('id', id); cb(); } }
+    async function del(t, id, cb) { if(confirm("Deseja excluir?")) { await sb.from(t).delete().eq('id', id); cb(); } }
 
     async function exportExcel(table) {
         const { data } = await sb.from(table).select('*');
@@ -615,106 +494,177 @@ async function saveCli() {
         XLSX.writeFile(wb, `Bertazo_${table}.xlsx`);
     }
 
-   function exportBIPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4');
-    const mesReferencia = document.getElementById('f-mes-bi').value;
-    const corBordo = [99, 13, 22]; 
-    const textoAnalise = document.getElementById('analise-manual').value;
+    async function loadBI() {
+        const mes = document.getElementById('f-mes-bi').value;
+        if (!mes) return;
+        const dataInicio = `${mes}-01`;
+        const dObj = new Date(mes + "-01T00:00:00");
+        dObj.setMonth(dObj.getMonth() + 1);
+        const dataFim = dObj.toISOString().split('T')[0];
 
-    const aplicarLayout = (titulo) => {
-        const pageHeight = doc.internal.pageSize.height;
-        doc.setFillColor(corBordo[0], corBordo[1], corBordo[2]);
-        doc.rect(0, 0, 210, 35, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(22);
-        doc.setFont("helvetica", "bold");
-        doc.text(titulo, 105, 22, { align: "center" });
+        const { data: vData } = await sb.from('vendas').select('*').gte('data_venda', dataInicio).lt('data_venda', dataFim);
+        const { data: vTotal } = await sb.from('vendas').select('data_venda, valor');
+        const { data: cData } = await sb.from('clientes').select('representada');
+        const { data: lData } = await sb.from('licitacoes').select('*');
+        const { count: totalClientes } = await sb.from('clientes').select('*', { count: 'exact', head: true });
         
-        doc.setFillColor(corBordo[0], corBordo[1], corBordo[2]);
-        doc.rect(0, pageHeight - 30, 210, 30, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(9);
-        doc.text("Att. Jéssica Bertazo | Representante Comercial", 105, pageHeight - 18, { align: "center" });
-        doc.text("E-mail: jessica_bertazo@hotmail.com | Fone: +55 (41) 9 9823-7713", 105, pageHeight - 13, { align: "center" });
-        doc.text("Umuarama - Pr.", 105, pageHeight - 8, { align: "center" });
-    };
+        const vendas = vData || [];
+        const total = vendas.reduce((a, b) => a + b.valor, 0);
+        document.getElementById('kpi-fat').innerText = total.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+        document.getElementById('kpi-total-cli').innerText = totalClientes || 0;
 
-    // Mapeamento de IDs para Títulos explicativos
-    const infoGraficos = [
-        { id: 'chartEvolucao', titulo: "1. Evolução Diária de Vendas", desc: "Desempenho de faturamento ao longo dos dias do mês." },
-        { id: 'chartRepresentadas', titulo: "2. Faturamento por Marca", desc: "Distribuição percentual de vendas entre as representadas." },
-        { id: 'chartTopCli', titulo: "3. Top 3 Clientes", desc: "Os maiores volumes de compra do período atual." },
-        { id: 'chartSazonalidade', titulo: "4. Histórico Semestral", desc: "Comparativo de faturamento dos últimos 6 meses." },
-        { id: 'chartCliRep', titulo: "5. Market Share da Carteira", desc: "Volume de clientes atendidos por cada representada." },
-        { id: 'chartMixMarcas', titulo: "6. Mix de Representadas (Cross-Sell)", desc: "Proporção de clientes que compram uma ou mais marcas." },
-        { id: 'chartLicStatus', titulo: "7. Status de Licitações", desc: "Monitoramento dos processos licitatórios e taxas de ganho." }
-    ];
-
-    // --- PÁGINA 1: INÍCIO DOS GRÁFICOS ---
-    aplicarLayout("RELATÓRIO DE GESTÃO");
-    doc.setTextColor(corBordo[0], corBordo[1], corBordo[2]);
-    doc.setFontSize(10);
-    doc.text(`Referência: ${mesReferencia} | Faturamento: ${document.getElementById('kpi-fat').innerText}`, 15, 45);
-    doc.line(15, 48, 195, 48);
-
-    let posY = 55;
-    const larguraGrafico = 150; // Gráficos bem maiores (centrados)
-    const posX = (210 - larguraGrafico) / 2;
-
-    infoGraficos.forEach((item, index) => {
-        const canvas = document.getElementById(item.id);
-        if (canvas) {
-            const imgData = canvas.toDataURL('image/png', 1.0);
-            const imgProps = doc.getImageProperties(imgData);
-            const alturaCalculada = larguraGrafico * (imgProps.height / imgProps.width);
-
-            // Verifica se o gráfico cabe na página atual, se não, adiciona nova página
-            if (posY + alturaCalculada > 250) {
-                doc.addPage();
-                aplicarLayout("RELATÓRIO DE GESTÃO (CONT.)");
-                posY = 50;
-            }
-
-            // Título do Gráfico
-            doc.setTextColor(corBordo[0], corBordo[1], corBordo[2]);
-            doc.setFontSize(12);
-            doc.setFont("helvetica", "bold");
-            doc.text(item.titulo, posX, posY);
-            
-            // Descrição breve
-            doc.setTextColor(100);
-            doc.setFontSize(9);
-            doc.setFont("helvetica", "italic");
-            doc.text(item.desc, posX, posY + 5);
-
-            // Imagem do Gráfico
-            doc.addImage(imgData, 'PNG', posX, posY + 8, larguraGrafico, alturaCalculada);
-            
-            posY += alturaCalculada + 25; // Espaço para o próximo título
+        if(vendas.length > 0) {
+            const vol = {};
+            vendas.forEach(v => { vol[v.cliente_nome] = (vol[v.cliente_nome]||0)+v.valor; });
+            const vips = Object.entries(vol).sort((a,b) => b[1]-a[1]);
+            document.getElementById('kpi-vip-nome').innerText = vips[0][0];
+            document.getElementById('kpi-vip-val').innerText = vips[0][1].toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+            const top3 = vips.slice(0,3);
+            updateChart('chartTopCli', 'bar', top3.map(x=>x[0]), top3.map(x=>x[1]), 'Volume R$', ["#5CACEE", "#9acd32", "#CD3278"]);
         }
-    });
 
-    // --- ÚLTIMA PÁGINA: ANÁLISE EDITÁVEL ---
-    doc.addPage();
-    aplicarLayout("ANÁLISE ESTRATÉGICA");
+        if(lData && lData.length) {
+            const ganhas = lData.filter(x => x.status === 'Ganha' || x.status === 'Faturada').length;
+            document.getElementById('kpi-lic-win').innerText = Math.round((ganhas/lData.length)*100) + "%";
+            const licStatus = {};
+            lData.forEach(l => licStatus[l.status] = (licStatus[l.status]||0)+1);
+            updateChart('chartLicStatus', 'polarArea', Object.keys(licStatus), Object.values(licStatus), 'Processos', ['#EE9A00', '#CD3278', '#A52A2A', '#9acd32']);
+        }
 
-    doc.setTextColor(44, 62, 80);
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("Considerações e Resultados", 15, 50);
-    
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    
-    const textoFinal = textoAnalise || "Nenhuma observação adicional registrada para este período.";
-    const splitText = doc.splitTextToSize(textoFinal, 180);
-    doc.text(splitText, 15, 60);
+        const saz = {};
+        (vTotal || []).forEach(v => { const m = v.data_venda.slice(0,7); saz[m] = (saz[m]||0)+v.valor; });
+        const last6 = Object.keys(saz).sort().slice(-6);
+        updateChart('chartSazonalidade', 'line', last6, last6.map(k=>saz[k]), 'Histórico Mensal', ["#630d16"], true);
+        
+        renderCharts(vendas, cData || []);
+    }
 
-    doc.save(`Bertazo_Relatorio_${mesReferencia}.pdf`);
-    showMsg("Relatório profissional gerado!");
-}
+    function renderCharts(vendas, clientes) {
+        const ev = {}; 
+        vendas.forEach(v => { const d = v.data_venda.split('-')[2]; ev[d] = (ev[d]||0)+v.valor; });
+        const labelsEv = Object.keys(ev).sort();
+        updateChart('chartEvolucao', 'line', labelsEv, labelsEv.map(l => ev[l]), 'Faturamento Diário', ["#630d16"], true);
+        
+        const repV = {}; 
+        vendas.forEach(v => { repV[v.representada] = (repV[v.representada]||0)+v.valor; });
+        const labelsV = Object.keys(repV);
+        updateChart('chartRepresentadas', 'doughnut', labelsV, Object.values(repV), 'R$', labelsV.map(l => brandColors[l] || '#34495e'));
+        
+        const repC = {}; 
+        clientes.forEach(c => { 
+            if(c.representada) {
+                c.representada.split(',').forEach(r => {
+                    const rLimpo = r.trim();
+                    if(rLimpo) repC[rLimpo] = (repC[rLimpo] || 0) + 1;
+                });
+            }
+        });
+        const labelsC = Object.keys(repC);
+        updateChart('chartCliRep', 'pie', labelsC, Object.values(repC), 'Clientes', labelsC.map(l => brandColors[l] || '#34495e'));
+        
+        let mix1 = 0; let mixMais = 0;
+        clientes.forEach(c => {
+            if(c.representada) {
+                const qtd = c.representada.split(',').filter(x => x.trim() !== '').length;
+                if(qtd === 1) mix1++; else if(qtd > 1) mixMais++;
+            }
+        });
+        updateChart('chartMixMarcas', 'doughnut', ['Mono Marca', 'Mix Estratégico'], [mix1, mixMais], 'Clientes', ['#EEC900', '#B452CD']);
+    }
+
+    function updateChart(id, type, labels, data, label, colors, fill = false) {
+        if(charts[id]) charts[id].destroy();
+        const ctx = document.getElementById(id);
+        if(!ctx) return;
+        charts[id] = new Chart(ctx, {
+            type,
+            data: { 
+                labels, 
+                datasets: [{ 
+                    label, data, backgroundColor: colors, borderColor: '#ffffff', borderWidth: 2,
+                    fill: fill ? { target: 'origin', above: colors[0] + '20' } : false, tension: 0.4
+                }] 
+            },
+            options: { 
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, font: { size: 9, weight: 600 } } } },
+                scales: (type === 'line' || type === 'bar') ? { y: { ticks: {font:{size:9}}, grid: { color: '#f0f0f0' } }, x: { ticks: {font:{size:9}}, grid: { display: false } } } : {}
+            }
+        });
+    }
+
+    function exportBIPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const mesReferencia = document.getElementById('f-mes-bi').value;
+        const corBordo = [99, 13, 22]; 
+        const textoAnalise = document.getElementById('analise-manual').value;
+
+        const aplicarLayout = (titulo) => {
+            const pageHeight = doc.internal.pageSize.height;
+            doc.setFillColor(corBordo[0], corBordo[1], corBordo[2]);
+            doc.rect(0, 0, 210, 35, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont("helvetica", "bold");
+            doc.text(titulo, 105, 22, { align: "center" });
+            
+            doc.setFillColor(corBordo[0], corBordo[1], corBordo[2]);
+            doc.rect(0, pageHeight - 30, 210, 30, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(9);
+            doc.text("Att. Jéssica Bertazo | Representante Comercial", 105, pageHeight - 18, { align: "center" });
+            doc.text("E-mail: jessica_bertazo@hotmail.com | Fone: +55 (41) 9 9823-7713", 105, pageHeight - 13, { align: "center" });
+            doc.text("Umuarama - Pr.", 105, pageHeight - 8, { align: "center" });
+        };
+
+        const infoGraficos = [
+            { id: 'chartEvolucao', titulo: "1. Evolução Diária de Vendas" },
+            { id: 'chartRepresentadas', titulo: "2. Faturamento por Marca" },
+            { id: 'chartTopCli', titulo: "3. Top 3 Clientes" },
+            { id: 'chartSazonalidade', titulo: "4. Histórico Semestral" },
+            { id: 'chartCliRep', titulo: "5. Market Share da Carteira" },
+            { id: 'chartMixMarcas', titulo: "6. Mix de Representadas" },
+            { id: 'chartLicStatus', titulo: "7. Status de Licitações" }
+        ];
+
+        aplicarLayout("RELATÓRIO DE GESTÃO BERTAZO");
+        doc.setTextColor(corBordo[0], corBordo[1], corBordo[2]);
+        doc.setFontSize(10);
+        doc.text(`Referência: ${mesReferencia} | Faturamento: ${document.getElementById('kpi-fat').innerText}`, 15, 45);
+        doc.line(15, 48, 195, 48);
+
+        let posY = 55;
+        const larguraGrafico = 140;
+        const posX = (210 - larguraGrafico) / 2;
+
+        infoGraficos.forEach((item) => {
+            const canvas = document.getElementById(item.id);
+            if (canvas) {
+                const imgData = canvas.toDataURL('image/png', 1.0);
+                if (posY + 80 > 250) { doc.addPage(); aplicarLayout("RELATÓRIO DE GESTÃO (CONT.)"); posY = 50; }
+                doc.setTextColor(corBordo[0], corBordo[1], corBordo[2]);
+                doc.setFontSize(12);
+                doc.text(item.titulo, posX, posY);
+                doc.addImage(imgData, 'PNG', posX, posY + 5, larguraGrafico, 70);
+                posY += 85;
+            }
+        });
+
+        doc.addPage();
+        aplicarLayout("ANÁLISE ESTRATÉGICA");
+        doc.setTextColor(44, 62, 80);
+        doc.setFontSize(14);
+        doc.text("Considerações e Resultados", 15, 50);
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "normal");
+        const textoFinal = textoAnalise || "Nenhuma observação adicional registrada.";
+        const splitText = doc.splitTextToSize(textoFinal, 180);
+        doc.text(splitText, 15, 60);
+
+        doc.save(`Bertazo_Relatorio_${mesReferencia}.pdf`);
+        showMsg("Relatório gerado!");
+    }
 </script>
 </body>
 </html>
-
