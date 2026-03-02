@@ -81,6 +81,14 @@
         .action-btn.del:hover { opacity: 1; }
 
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #27ae60; color: white; padding: 12px 30px; border-radius: 50px; font-weight: 600; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 10001; animation: slideUp 0.4s ease-out; }
+        
+        /* Novos estilos para Cards de Marcas */
+        .brand-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; grid-column: 1 / -1; }
+        .brand-summary-list { display: grid; grid-template-columns: 1fr; gap: 8px; max-height: 350px; overflow-y: auto; padding-right: 5px; }
+        .brand-mini-card { background: #fff; border: 1px solid var(--border); padding: 10px; border-radius: 8px; border-left: 4px solid var(--bordo); }
+        .brand-mini-card h4 { margin: 0; font-size: 10px; color: #7f8c8d; text-transform: uppercase; }
+        .brand-mini-card .val { font-size: 14px; font-weight: 700; color: var(--text); }
+
         @keyframes slideUp { from { bottom: -50px; opacity: 0; } to { bottom: 30px; opacity: 1; } }
     </style>
 </head>
@@ -131,8 +139,26 @@
             </div>
 
             <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
-                <div class="card"><label>Performance de Vendas (Diário)</label><canvas id="chartEvolucao"></canvas></div>
-                <div class="card"><label>Faturamento por Marca</label><canvas id="chartRepresentadas"></canvas></div>
+                <div class="card brand-grid">
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <label>Performance Diária por Marca</label>
+                            <select id="chart-type-rep" onchange="loadBI()" style="width:100px; height:25px; font-size:9px; padding:2px;">
+                                <option value="line">Linhas</option>
+                                <option value="bar">Barras</option>
+                            </select>
+                        </div>
+                        <canvas id="chartDiarioRep"></canvas>
+                    </div>
+                    <div>
+                        <label>Vendas Mensais / Marca</label>
+                        <div id="brand-cards-list" class="brand-summary-list">
+                            </div>
+                    </div>
+                </div>
+
+                <div class="card"><label>Performance de Vendas (Total Diário)</label><canvas id="chartEvolucao"></canvas></div>
+                <div class="card"><label>Faturamento por Marca (%)</label><canvas id="chartRepresentadas"></canvas></div>
                 <div class="card"><label>Top 3 Clientes do Mês</label><canvas id="chartTopCli"></canvas></div>
                 <div class="card"><label>Sazonalidade de Vendas</label><canvas id="chartSazonalidade"></canvas></div>
                 <div class="card"><label>Market Share da Carteira (Por Marca)</label><canvas id="chartCliRep"></canvas></div>
@@ -540,15 +566,61 @@
     }
 
     function renderCharts(vendas, clientes) {
+        // Performance Diária Geral
         const ev = {}; 
         vendas.forEach(v => { const d = v.data_venda.split('-')[2]; ev[d] = (ev[d]||0)+v.valor; });
         const labelsEv = Object.keys(ev).sort();
         updateChart('chartEvolucao', 'line', labelsEv, labelsEv.map(l => ev[l]), 'Faturamento Diário', ["#630d16"], true);
         
+        // NOVO: Performance Diária POR MARCA
+        const daysInMonth = new Set(vendas.map(v => v.data_venda.split('-')[2]));
+        const sortedDays = Array.from(daysInMonth).sort();
+        const brands = Object.keys(brandColors);
+        const datasetsRep = brands.map(brand => {
+            const dataMap = {};
+            vendas.filter(v => v.representada === brand).forEach(v => {
+                const day = v.data_venda.split('-')[2];
+                dataMap[day] = (dataMap[day] || 0) + v.valor;
+            });
+            return {
+                label: brand,
+                data: sortedDays.map(d => dataMap[d] || 0),
+                borderColor: brandColors[brand],
+                backgroundColor: brandColors[brand] + "20",
+                fill: false,
+                tension: 0.3
+            };
+        });
+
+        const cType = document.getElementById('chart-type-rep').value;
+        if(charts['chartDiarioRep']) charts['chartDiarioRep'].destroy();
+        charts['chartDiarioRep'] = new Chart(document.getElementById('chartDiarioRep'), {
+            type: cType,
+            data: { labels: sortedDays, datasets: datasetsRep },
+            options: { 
+                responsive: true, maintainAspectRatio: false,
+                scales: { 
+                    y: { stacked: (cType === 'bar'), ticks: { font: { size: 9 } } }, 
+                    x: { stacked: (cType === 'bar'), ticks: { font: { size: 9 } } } 
+                },
+                plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 8 } } } }
+            }
+        });
+
+        // Atualizar Cards laterais de Marcas e Gráfico Rosca
         const repV = {}; 
         vendas.forEach(v => { repV[v.representada] = (repV[v.representada]||0)+v.valor; });
         const labelsV = Object.keys(repV);
         updateChart('chartRepresentadas', 'doughnut', labelsV, Object.values(repV), 'R$', labelsV.map(l => brandColors[l] || '#34495e'));
+
+        document.getElementById('brand-cards-list').innerHTML = Object.entries(brandColors).map(([name, color]) => {
+            const total = repV[name] || 0;
+            return `
+            <div class="brand-mini-card" style="border-left-color: ${color}">
+                <h4>${name}</h4>
+                <div class="val">R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
+            </div>`;
+        }).join('');
         
         const repC = {}; 
         clientes.forEach(c => { 
@@ -619,8 +691,8 @@
         };
 
         const infoGraficos = [
-            { id: 'chartEvolucao', titulo: "1. Evolução Diária de Vendas" },
-            { id: 'chartRepresentadas', titulo: "2. Faturamento por Marca" },
+            { id: 'chartDiarioRep', titulo: "1. Performance Diária por Marca" },
+            { id: 'chartRepresentadas', titulo: "2. Faturamento por Marca (%)" },
             { id: 'chartTopCli', titulo: "3. Top 3 Clientes" },
             { id: 'chartSazonalidade', titulo: "4. Histórico Semestral" },
             { id: 'chartCliRep', titulo: "5. Market Share da Carteira" },
