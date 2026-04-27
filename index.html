@@ -244,23 +244,28 @@
         </section>
 
         <section id="s-lic" class="hidden">
-            <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                    <h3 style="margin:0; color:var(--bordo); font-size:16px;">Gestão de Licitações</h3>
-                    <button class="btn" style="background:#27ae60; padding:5px 15px; font-size:10px;" onclick="exportExcel('licitacoes')">BAIXAR PLANILHA LICITAÇÕES</button>
-                </div>
-                <div class="grid">
-                    <div><label>Data Pregão</label><input type="date" id="l-data"></div>
-                    <div><label>Órgão</label><input type="text" id="l-cli"></div>
-                    <div><label>Valor</label><input type="number" id="l-val" step="0.01"></div>
-                    <div><label>Status</label>
-                        <select id="l-status">
-                            <option>Pendente</option><option>Ganha</option><option>Perdida</option><option>Faturada</option>
-                        </select>
-                    </div>
-                </div>
-                <button class="btn" style="width:180px" onclick="saveLic()">SALVAR PROCESSO</button>
-            </div>
+          <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 id="lic-form-title" style="margin:0; color:var(--bordo); font-size:16px;">Gestão de Licitações</h3>
+        <button class="btn" style="background:#27ae60; padding:5px 15px; font-size:10px;" onclick="exportExcel('licitacoes')">BAIXAR PLANILHA LICITAÇÕES</button>
+    </div>
+    
+    <input type="hidden" id="l-id">
+    
+    <div class="grid">
+        <div><label>Data Pregão</label><input type="date" id="l-data"></div>
+        <div><label>Órgão</label><input type="text" id="l-cli"></div>
+        <div><label>Valor</label><input type="number" id="l-val" step="0.01"></div>
+        <div><label>Status</label>
+            <select id="l-status">
+                <option>Pendente</option><option>Ganha</option><option>Perdida</option><option>Faturada</option>
+            </select>
+        </div>
+    </div>
+    <div style="display:flex; gap:10px;">
+        <button class="btn" style="width:180px" onclick="saveLic()">SALVAR PROCESSO</button>
+        <button id="btn-cancel-lic" class="btn hidden" style="background:#95a5a6; width:100px" onclick="clearLicForm()">CANCELAR</button>
+    </div>
             <table id="t-lic"><thead><tr><th>Data</th><th>Órgão</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
         </section>
     </div>
@@ -497,28 +502,83 @@
             </tr>`).join('');
     }
 
-    async function saveLic() {
-        const { error } = await sb.from('licitacoes').insert([{ 
-            data_pedido: document.getElementById('l-data').value, 
-            cliente: document.getElementById('l-cli').value, 
-            valor_total: parseFloat(document.getElementById('l-val').value), 
-            status: document.getElementById('l-status').value 
-        }]);
-        if(error) alert("Erro: " + error.message);
-        else { showMsg("Processo salvo!"); document.getElementById('l-cli').value = ""; document.getElementById('l-val').value = ""; loadLic(); }
+    // Variável global para armazenar os dados brutos (adicione junto com as outras let no início)
+let rawLic = [];
+
+async function saveLic() {
+    const id = document.getElementById('l-id').value;
+    const p = { 
+        data_pedido: document.getElementById('l-data').value, 
+        cliente: document.getElementById('l-cli').value, 
+        valor_total: parseFloat(document.getElementById('l-val').value), 
+        status: document.getElementById('l-status').value 
+    };
+
+    if(!p.data_pedido || !p.cliente || isNaN(p.valor_total)) { 
+        alert("Preencha Data, Órgão e Valor."); 
+        return; 
     }
 
-    async function loadLic() {
-        const { data } = await sb.from('licitacoes').select('*').order('data_pedido', {ascending:false});
-        document.querySelector('#t-lic tbody').innerHTML = (data || []).map(l => `
-            <tr>
-                <td>${l.data_pedido.split('-').reverse().join('/')}</td>
-                <td><b>${l.cliente}</b></td>
-                <td style="font-weight:600">R$ ${l.valor_total.toLocaleString('pt-BR')}</td>
-                <td><span class="badge" style="background:#eee; color:#666">${l.status}</span></td>
-                <td style="text-align:right;"><button onclick="del('licitacoes','${l.id}', loadLic)" class="action-btn del">${ICON_DEL}</button></td>
-            </tr>`).join('');
+    let res;
+    if (id) {
+        // Modo Edição
+        res = await sb.from('licitacoes').update(p).eq('id', id);
+    } else {
+        // Modo Novo Registro
+        res = await sb.from('licitacoes').insert([p]);
     }
+
+    if(res.error) alert("Erro: " + res.error.message);
+    else { 
+        showMsg(id ? "Licitação atualizada!" : "Processo salvo!"); 
+        clearLicForm();
+        loadLic(); 
+    }
+}
+
+async function loadLic() {
+    const { data, error } = await sb.from('licitacoes').select('*').order('data_pedido', {ascending:false});
+    if(error) return;
+    
+    rawLic = data || []; // Armazena para consulta na edição
+    
+    document.querySelector('#t-lic tbody').innerHTML = rawLic.map(l => `
+        <tr>
+            <td>${l.data_pedido.split('-').reverse().join('/')}</td>
+            <td><b>${l.cliente}</b></td>
+            <td style="font-weight:600">R$ ${l.valor_total.toLocaleString('pt-BR')}</td>
+            <td><span class="badge" style="background:#eee; color:#666">${l.status}</span></td>
+            <td style="text-align:right;">
+                <button onclick="editLic('${l.id}')" class="action-btn">${ICON_EDIT}</button>
+                <button onclick="del('licitacoes','${l.id}', loadLic)" class="action-btn del">${ICON_DEL}</button>
+            </td>
+        </tr>`).join('');
+}
+
+function editLic(id) {
+    const l = rawLic.find(x => x.id == id);
+    if(!l) return;
+    
+    document.getElementById('l-id').value = l.id;
+    document.getElementById('l-data').value = l.data_pedido;
+    document.getElementById('l-cli').value = l.cliente;
+    document.getElementById('l-val').value = l.valor_total;
+    document.getElementById('l-status').value = l.status;
+    
+    document.getElementById('lic-form-title').innerText = "Editando Licitação";
+    document.getElementById('btn-cancel-lic').classList.remove('hidden');
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function clearLicForm() {
+    document.getElementById('l-id').value = "";
+    document.getElementById('l-data').value = "";
+    document.getElementById('l-cli').value = "";
+    document.getElementById('l-val').value = "";
+    document.getElementById('l-status').selectedIndex = 0;
+    document.getElementById('lic-form-title').innerText = "Gestão de Licitações";
+    document.getElementById('btn-cancel-lic').classList.add('hidden');
+}
 
     async function del(t, id, cb) { if(confirm("Deseja excluir?")) { await sb.from(t).delete().eq('id', id); cb(); } }
 
