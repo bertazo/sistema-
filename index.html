@@ -192,12 +192,11 @@
                 <div class="grid">
                     <div><label>WhatsApp</label><input type="text" id="c-whats" oninput="maskTel(this)"></div>
                     <div><label>Contato</label><input type="text" id="c-contato"></div>
-                    <div><label>Localização</label><input type="text" id="c-end"></div>
-    <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 10px;">
-        <div><label>Cidade</label><input type="text" id="c-cidade"></div>
-        <div><label>UF</label><input type="text" id="c-uf" maxlength="2" style="text-transform: uppercase;"></div>
-    </div>
-</div>
+                    <div><label>Localização (Endereço)</label><input type="text" id="c-end"></div>
+                </div>
+                <div class="grid" style="grid-template-columns: 2fr 1fr;">
+                    <div><label>Cidade</label><input type="text" id="c-cidade"></div>
+                    <div><label>Estado</label><input type="text" id="c-estado" maxlength="2" placeholder="Ex: PR"></div>
                 </div>
                 <label>Notas Estratégicas</label><textarea id="c-obs" rows="2" style="resize:none;"></textarea>
                 <button class="btn" style="margin-top:10px; width:150px" onclick="saveCli()">SALVAR NA FICHA</button>
@@ -244,28 +243,24 @@
         </section>
 
         <section id="s-lic" class="hidden">
-          <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 id="lic-form-title" style="margin:0; color:var(--bordo); font-size:16px;">Gestão de Licitações</h3>
-        <button class="btn" style="background:#27ae60; padding:5px 15px; font-size:10px;" onclick="exportExcel('licitacoes')">BAIXAR PLANILHA LICITAÇÕES</button>
-    </div>
-    
-    <input type="hidden" id="l-id">
-    
-    <div class="grid">
-        <div><label>Data Pregão</label><input type="date" id="l-data"></div>
-        <div><label>Órgão</label><input type="text" id="l-cli"></div>
-        <div><label>Valor</label><input type="number" id="l-val" step="0.01"></div>
-        <div><label>Status</label>
-            <select id="l-status">
-                <option>Pendente</option><option>Ganha</option><option>Perdida</option><option>Faturada</option>
-            </select>
-        </div>
-    </div>
-    <div style="display:flex; gap:10px;">
-        <button class="btn" style="width:180px" onclick="saveLic()">SALVAR PROCESSO</button>
-        <button id="btn-cancel-lic" class="btn hidden" style="background:#95a5a6; width:100px" onclick="clearLicForm()">CANCELAR</button>
-    </div>
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h3 style="margin:0; color:var(--bordo); font-size:16px;">Gestão de Licitações</h3>
+                    <button class="btn" style="background:#27ae60; padding:5px 15px; font-size:10px;" onclick="exportExcel('licitacoes')">BAIXAR PLANILHA LICITAÇÕES</button>
+                </div>
+                <input type="hidden" id="l-id">
+                <div class="grid">
+                    <div><label>Data Pregão</label><input type="date" id="l-data"></div>
+                    <div><label>Órgão</label><input type="text" id="l-cli"></div>
+                    <div><label>Valor</label><input type="number" id="l-val" step="0.01"></div>
+                    <div><label>Status</label>
+                        <select id="l-status">
+                            <option>Pendente</option><option>Ganha</option><option>Perdida</option><option>Faturada</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn" style="width:180px" onclick="saveLic()">SALVAR PROCESSO</button>
+            </div>
             <table id="t-lic"><thead><tr><th>Data</th><th>Órgão</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
         </section>
     </div>
@@ -290,7 +285,7 @@
     const ICON_DEL = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
     
     let charts = {};
-    let rawClientes=[], rawVendas=[];
+    let rawClientes=[], rawVendas=[], rawLicitacoes=[];
 
     async function handleLogin() {
         const { error } = await sb.auth.signInWithPassword({ 
@@ -366,8 +361,8 @@
             whatsapp: document.getElementById('c-whats').value, 
             contato: document.getElementById('c-contato').value, 
             endereco: document.getElementById('c-end').value, 
-            cidade: document.getElementById('c-cidade').value, 
-            estado: document.getElementById('c-uf').value,     
+            cidade: document.getElementById('c-cidade').value,
+            estado: document.getElementById('c-estado').value,
             observacoes: document.getElementById('c-obs').value
         };
 
@@ -436,11 +431,10 @@
                         <button onclick="del('clientes', '${c.id}', loadCli)" class="action-btn del">${ICON_DEL}</button>
                     </div>
                 </div>
-                <div style="font-size:11px; color:#7f8c8d; margin-top:5px;">CNPJ: ${c.cnpj} | 📍 ${c.endereco || '-'} | 📍 ${c.cidade || '-'}/${c.estado || '-'} |📞 ${c.whatsapp || '-'} | 👤 ${c.contato || '-'}</div>
+                <div style="font-size:11px; color:#7f8c8d; margin-top:5px;">CNPJ: ${c.cnpj} | 📍 ${c.endereco || '-'} | 🏙️ ${c.cidade || '-'} - ${c.estado || '-'} | 📞 ${c.whatsapp || '-'} | 👤 ${c.contato || '-'}</div>
                 ${c.observacoes ? `<div class="obs-box">${c.observacoes}</div>` : ''}
             </div>`}).join('');
     }
-  
 
     function editCli(id) {
         const c = rawClientes.find(x => x.id == id);
@@ -454,7 +448,7 @@
         document.getElementById('c-contato').value = c.contato || "";
         document.getElementById('c-end').value = c.endereco || "";
         document.getElementById('c-cidade').value = c.cidade || "";
-        document.getElementById('c-uf').value = c.estado || "";
+        document.getElementById('c-estado').value = c.estado || "";
         document.getElementById('c-obs').value = c.observacoes || "";
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
@@ -502,83 +496,58 @@
             </tr>`).join('');
     }
 
-    // Variável global para armazenar os dados brutos (adicione junto com as outras let no início)
-let rawLic = [];
+    async function saveLic() {
+        const id = document.getElementById('l-id').value;
+        const p = { 
+            data_pedido: document.getElementById('l-data').value, 
+            cliente: document.getElementById('l-cli').value, 
+            valor_total: parseFloat(document.getElementById('l-val').value), 
+            status: document.getElementById('l-status').value 
+        };
 
-async function saveLic() {
-    const id = document.getElementById('l-id').value;
-    const p = { 
-        data_pedido: document.getElementById('l-data').value, 
-        cliente: document.getElementById('l-cli').value, 
-        valor_total: parseFloat(document.getElementById('l-val').value), 
-        status: document.getElementById('l-status').value 
-    };
+        let res;
+        if (id) {
+            res = await sb.from('licitacoes').update(p).eq('id', id);
+        } else {
+            res = await sb.from('licitacoes').insert([p]);
+        }
 
-    if(!p.data_pedido || !p.cliente || isNaN(p.valor_total)) { 
-        alert("Preencha Data, Órgão e Valor."); 
-        return; 
+        if(res.error) alert("Erro: " + res.error.message);
+        else { 
+            showMsg("Processo salvo!"); 
+            document.getElementById('l-id').value = "";
+            document.getElementById('l-cli').value = ""; 
+            document.getElementById('l-val').value = ""; 
+            loadLic(); 
+        }
     }
 
-    let res;
-    if (id) {
-        // Modo Edição
-        res = await sb.from('licitacoes').update(p).eq('id', id);
-    } else {
-        // Modo Novo Registro
-        res = await sb.from('licitacoes').insert([p]);
+    async function loadLic() {
+        const { data } = await sb.from('licitacoes').select('*').order('data_pedido', {ascending:false});
+        rawLicitacoes = data || [];
+        document.querySelector('#t-lic tbody').innerHTML = rawLicitacoes.map(l => `
+            <tr>
+                <td>${l.data_pedido.split('-').reverse().join('/')}</td>
+                <td><b>${l.cliente}</b></td>
+                <td style="font-weight:600">R$ ${l.valor_total.toLocaleString('pt-BR')}</td>
+                <td><span class="badge" style="background:#eee; color:#666">${l.status}</span></td>
+                <td style="text-align:right;">
+                    <button onclick="editLic('${l.id}')" class="action-btn">${ICON_EDIT}</button>
+                    <button onclick="del('licitacoes','${l.id}', loadLic)" class="action-btn del">${ICON_DEL}</button>
+                </td>
+            </tr>`).join('');
     }
 
-    if(res.error) alert("Erro: " + res.error.message);
-    else { 
-        showMsg(id ? "Licitação atualizada!" : "Processo salvo!"); 
-        clearLicForm();
-        loadLic(); 
+    function editLic(id) {
+        const l = rawLicitacoes.find(x => x.id == id);
+        if(!l) return;
+        document.getElementById('l-id').value = l.id;
+        document.getElementById('l-data').value = l.data_pedido;
+        document.getElementById('l-cli').value = l.cliente;
+        document.getElementById('l-val').value = l.valor_total;
+        document.getElementById('l-status').value = l.status;
+        window.scrollTo({top: 0, behavior: 'smooth'});
     }
-}
-
-async function loadLic() {
-    const { data, error } = await sb.from('licitacoes').select('*').order('data_pedido', {ascending:false});
-    if(error) return;
-    
-    rawLic = data || []; // Armazena para consulta na edição
-    
-    document.querySelector('#t-lic tbody').innerHTML = rawLic.map(l => `
-        <tr>
-            <td>${l.data_pedido.split('-').reverse().join('/')}</td>
-            <td><b>${l.cliente}</b></td>
-            <td style="font-weight:600">R$ ${l.valor_total.toLocaleString('pt-BR')}</td>
-            <td><span class="badge" style="background:#eee; color:#666">${l.status}</span></td>
-            <td style="text-align:right;">
-                <button onclick="editLic('${l.id}')" class="action-btn">${ICON_EDIT}</button>
-                <button onclick="del('licitacoes','${l.id}', loadLic)" class="action-btn del">${ICON_DEL}</button>
-            </td>
-        </tr>`).join('');
-}
-
-function editLic(id) {
-    const l = rawLic.find(x => x.id == id);
-    if(!l) return;
-    
-    document.getElementById('l-id').value = l.id;
-    document.getElementById('l-data').value = l.data_pedido;
-    document.getElementById('l-cli').value = l.cliente;
-    document.getElementById('l-val').value = l.valor_total;
-    document.getElementById('l-status').value = l.status;
-    
-    document.getElementById('lic-form-title').innerText = "Editando Licitação";
-    document.getElementById('btn-cancel-lic').classList.remove('hidden');
-    window.scrollTo({top: 0, behavior: 'smooth'});
-}
-
-function clearLicForm() {
-    document.getElementById('l-id').value = "";
-    document.getElementById('l-data').value = "";
-    document.getElementById('l-cli').value = "";
-    document.getElementById('l-val').value = "";
-    document.getElementById('l-status').selectedIndex = 0;
-    document.getElementById('lic-form-title').innerText = "Gestão de Licitações";
-    document.getElementById('btn-cancel-lic').classList.add('hidden');
-}
 
     async function del(t, id, cb) { if(confirm("Deseja excluir?")) { await sb.from(t).delete().eq('id', id); cb(); } }
 
