@@ -193,6 +193,11 @@
                     <div><label>WhatsApp</label><input type="text" id="c-whats" oninput="maskTel(this)"></div>
                     <div><label>Contato</label><input type="text" id="c-contato"></div>
                     <div><label>Localização</label><input type="text" id="c-end"></div>
+    <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 10px;">
+        <div><label>Cidade</label><input type="text" id="c-cidade"></div>
+        <div><label>UF</label><input type="text" id="c-uf" maxlength="2" style="text-transform: uppercase;"></div>
+    </div>
+</div>
                 </div>
                 <label>Notas Estratégicas</label><textarea id="c-obs" rows="2" style="resize:none;"></textarea>
                 <button class="btn" style="margin-top:10px; width:150px" onclick="saveCli()">SALVAR NA FICHA</button>
@@ -356,6 +361,8 @@
             whatsapp: document.getElementById('c-whats').value, 
             contato: document.getElementById('c-contato').value, 
             endereco: document.getElementById('c-end').value, 
+            cidade: document.getElementById('c-cidade').value, 
+            estado: document.getElementById('c-uf').value,     
             observacoes: document.getElementById('c-obs').value
         };
 
@@ -424,10 +431,11 @@
                         <button onclick="del('clientes', '${c.id}', loadCli)" class="action-btn del">${ICON_DEL}</button>
                     </div>
                 </div>
-                <div style="font-size:11px; color:#7f8c8d; margin-top:5px;">CNPJ: ${c.cnpj} | 📍 ${c.endereco || '-'} | 📞 ${c.whatsapp || '-'} | 👤 ${c.contato || '-'}</div>
+                <div style="font-size:11px; color:#7f8c8d; margin-top:5px;">CNPJ: ${c.cnpj} | 📍 ${c.endereco || '-'} | 📍 ${c.cidade || '-'}/${c.estado || '-'} |📞 ${c.whatsapp || '-'} | 👤 ${c.contato || '-'}</div>
                 ${c.observacoes ? `<div class="obs-box">${c.observacoes}</div>` : ''}
             </div>`}).join('');
     }
+  
 
     function editCli(id) {
         const c = rawClientes.find(x => x.id == id);
@@ -440,6 +448,8 @@
         document.getElementById('c-whats').value = c.whatsapp || "";
         document.getElementById('c-contato').value = c.contato || "";
         document.getElementById('c-end').value = c.endereco || "";
+        document.getElementById('c-cidade').value = c.cidade || "";
+        document.getElementById('c-uf').value = c.estado || "";
         document.getElementById('c-obs').value = c.observacoes || "";
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
